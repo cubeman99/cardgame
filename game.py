@@ -11,6 +11,9 @@ from logic.actions import *
 import cards
 
 
+
+
+
 class Game(Entity):
 	Manager = GameManager
 
@@ -60,7 +63,7 @@ class Game(Entity):
 		return chain(self.players, self.hands, self.board, self.decks, self.discarded)
 		#return chain(self.entities, self.hands, self.board, self.decks, self.discarded)
 
-		# Function to create a card instance of the correct class.
+	# Function to create a card instance of the correct class.
 	def create_card(self, id):
 		data = cards.db[id]
 		subclass = {
@@ -160,6 +163,12 @@ class Game(Entity):
 		"""
 		return self.action_block(source, actions,
 			type=BlockType.TRIGGER, event_args=event_args)
+
+	def find_entity(self, id):
+		entity = [e for e in self.game if e.entity_id == id]
+		if len(entity) > 0:
+			return entity[0]
+		return None
 
 	@property
 	def entities(self):

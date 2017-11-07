@@ -374,6 +374,8 @@ class Play(GameAction):
 		player = source
 		action_log.log("%s plays %r", player, card)
 
+		player.pay_cost(card, card.morale, card.supply)
+
 		card.target = target
 
 		# Move the card into play
@@ -389,7 +391,7 @@ class Play(GameAction):
 			emerge_actions = card.get_actions("emerge")
 		elif card.type == CardType.SPELL:
 			emerge_actions = card.get_actions("play")
-		print(card.type)
+		
 		if len(emerge_actions) > 0:
 			source.game.queue_actions(card, [Emerge(card, card.target)])
 

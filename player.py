@@ -4,6 +4,7 @@ from utils import CardList
 from entity import Entity, int_property
 from enums import *
 from manager import PlayerManager
+import random
 
 
 #class
@@ -92,12 +93,13 @@ class Player(LiveEntity):
 		for card in starting_hand:
 			card.zone = Zone.HAND
 
-		def can_pay_cost(self, card):
-			return self.morale >= card.morale_cost and \
-				self.supply >= card.supply_cost
+	def can_pay_cost(self, card):
+		return self.morale >= card.morale and \
+			self.supply >= card.supply
 
-	def pay_cost(self, source, amount: int):
-		return amount
+	def pay_cost(self, source, morale=0, supply=0):
+		self.morale -= morale
+		self.supply -= supply
 
 	def shuffle_deck(self):
 		random.shuffle(self.deck)

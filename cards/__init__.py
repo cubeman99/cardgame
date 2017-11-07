@@ -89,6 +89,13 @@ class CardDatabase(dict):
 		if hasattr(card_info, "swarm"):
 			card.scripts.update.append((Count(ALLIED_UNITS - SELF) >= 3) & Refresh(SELF, buff=card_info.swarm))
 
+		# Set choose one cards
+		if hasattr(card_info, "choose"):
+			card.choose_cards = card_info.choose[:]
+		else:
+			card.choose_cards = []
+
+
 		db[id] = card
 		#print(card.name)
 

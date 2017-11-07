@@ -115,13 +115,22 @@ class BaseCard(Entity):
 			self.play_counter = self.game.play_counter
 			self.game.play_counter += 1
 
+	# Check if the card is playable
 	def is_playable(self):
+		"""Check if this card is playable based on the current game state"""
 		if not self.controller.current_player:
 			return False
-		if zone != Zone.HAND:
+		if self.zone != Zone.HAND:
 			return False
 		if not self.controller.can_pay_cost(self):
 			return False
+		# TODO: other requirements
+		return True
+
+	# Check if the card is activated by some condition
+	def is_activated(self):
+		"""Check if this card is activated by the current game state"""
+		return False
 
 	@property
 	def supply_cost(self):

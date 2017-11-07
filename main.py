@@ -3,42 +3,56 @@ from game import Game
 from enums import *
 from player import Player
 import cards
-import logic.actions
+import logic.actions as actions
 from logic.selector import *
 from utils import *
 from colors import *
 import sys
 import random
 import os
-import re
 import traceback
 
 class CommandResponse:
-	INVALID = -1
-	NONE = 0
-	END_GAME = 1
-	NEXT_TURN = 2
-	PRINT_STATE = 3
+	INVALID		= -1
+	NONE		= 0
+	END_GAME	= 1
+	NEXT_TURN	= 2
+	PRINT_STATE	= 3
 
 horizontal_line = "-" * TERMINAL_WIDTH
 
 
-def color_print(text):
-	index = 0
-	for match in re.finditer("{(?P<color>[_A-Za-z0-9]*)}", text):
-		color_name = match.group("color")
-		color = Colors.DEFAULT
-		if not color_name == "":
-			color = getattr(Colors, color_name.upper())
+test_deck = [
+	# Aard
+	(1, "PackExile"),
+	(1, "RagepackGrowler"),
+	(1, "RedmawBerserker"),
+	(1, "BlackbloodBruiser"),
+	(1, "BonehoarderBrute"),
+	(1, "WarpackChieftan"),
+	(1, "RageheartThug"),
+	(1, "WarlordHeir"),
+	(1, "RipperPack"),
+	(1, "RageheartScreamer"),
+	(1, "WarpackHowler"),
+	(1, "RaidpackRally"),
+	(1, "Overrun"),
 
-		sys.stdout.write(text[index:match.start()])
-		sys.stdout.flush()
-		index = match.end()
+	# Octopi
+	(1, "OctopiExile"),
+	(1, "InfestedWhale"),
+	(1, "EchoingFiend"),
+	(1, "ServantOfElagalth"),
+	(1, "StarvingCephalopod"),
+	(1, "AgileSquirmer"),
+	(1, "NecrolightPriestess"),
+	(1, "NoxiousTentacle"),
+	(1, "ElegalthsChosen"),
+	(1, "AbyssalSummoning"),
+	(1, "PotentAfterlife"),
+	(1, "ExtremePressure"),
+]
 
-		set_text_color(color)
-
-	sys.stdout.write(text[index:])
-	sys.stdout.flush()
 
 class TextGame:
 
@@ -81,11 +95,13 @@ class TextGame:
 		self.game.player1.give("PotentAfterlife")
 		self.game.player1.give("ExtremePressure")
 
-		self.game.player1.card("TestCard", zone=Zone.DECK)
-		self.game.player1.card("TestCard", zone=Zone.DECK)
-		self.game.player1.card("TestCard", zone=Zone.DECK)
-		self.game.player1.card("TestCard", zone=Zone.DECK)
+		for item in test_deck:
+			for i in range(0, item[0]):
+				self.game.player1.card(item[1], zone=Zone.DECK)
+				self.game.player2.card(item[1], zone=Zone.DECK)
 
+		self.game.player1.shuffle_deck()
+		self.game.player2.shuffle_deck()
 		self.game.begin_turn(self.game.player1)
 
 	def play(self):
@@ -334,7 +350,11 @@ class TextGame:
 			max_name_length = max(max_name_length, len(card.data.name))
 
 		for card in card_list:
-			color_print("  %3d. %dm/%ds - " %(
+			id_color = ""
+			if card.is_playable():
+				id_color = "playable"
+			color_print("  {%s}%3d.{} %dm/%ds - " %(
+				id_color,
 				card.entity_id,
 				card.morale,
 				card.supply))
@@ -409,6 +429,17 @@ def test_game():
 
 if __name__=="__main__":
 	push_color(Colors.DEFAULT)
+
+	import struct
+
+	data = struct.pack("iii", 4, 12, 10)
+	print(data)
+	print(data[:4])
+	print(list(struct.unpack("i", data[:4])))
+
+	#print(struct.unpack('i', fin.read(4)))
+
+	exit()
 
 	try:
 		game = TextGame()

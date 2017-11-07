@@ -217,6 +217,14 @@ class AbyssalSummoning_Token_Failure:
 	cost	= (0, 0)
 	stats	= (3, 3)
 
+class SacrificialIncantation:
+	name	= "Sacrificial Incantation"
+	text	= "Corrupt: deal 5 damage to a unit, gain 1 morale. Every unit corrupted allows an additional cast."
+	type	= CardType.SPELL
+	tribe	= Tribe.OCTOPI
+	cost	= (3, 0)
+	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER) # TODO: allow additional cast (return to hand??)
+
 class PotentAfterlife:
 	name	= "Potent Afterlife"
 	text	= "Corrupt: Draw 2 cards"

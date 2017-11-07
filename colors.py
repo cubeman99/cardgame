@@ -2,6 +2,7 @@
 import platform
 import sys
 import os
+import re
 
 
 def supports_color():
@@ -32,12 +33,15 @@ class Colors:
 
 	RED				= "\033[31m"
 	GREEN			= "\033[32m"
+	YELLOW			= "\033[38;5;226m"
 
 	DEFAULT			= "\033[0m"
 	BUFFED_STAT		= "\033[32m"
 	DAMAGED_HEALTH	= "\033[31m"
 	CARD_NAME		= "\033[38;5;85m"
 	CARD_TEXT		= "\033[38;5;249m"
+	PLAYABLE		= "\033[38;5;112m\033[48;5;235m"
+	ACTIVATED		= "\033[38;5;190m"
 
 	EXCEPTION		= "\033[38;5;226m"
 
@@ -156,5 +160,26 @@ def push_color(color):
 	set_text_color(color)
 def pop_color():
 	set_text_color(Colors.DEFAULT)
+
+
+
+
+def color_print(text):
+	index = 0
+	for match in re.finditer("{(?P<color>[_A-Za-z0-9]*)}", text):
+		color_name = match.group("color")
+		color = Colors.DEFAULT
+		if not color_name == "":
+			color = getattr(Colors, color_name.upper())
+
+		sys.stdout.write(text[index:match.start()])
+		sys.stdout.flush()
+		index = match.end()
+
+		set_text_color(color)
+
+	sys.stdout.write(text[index:])
+	sys.stdout.flush()
+
 
 

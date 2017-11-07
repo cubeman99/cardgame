@@ -132,14 +132,55 @@ class WarpackHowler:
 	cost	= (2, 2)
 	stats	= (2, 3)
 	swarm	= "WarpackHowler_Swarm"
-	emerge	= [] # TODO
+	emerge	= Summon(CONTROLLER, "WarpackHowler_Token") * 2
 
 WarpackHowler_Swarm = buff(+4,+3)
+
+class WarpackHowler_Token:
+	name	= "Warpack Howler Token"
+	type	= CardType.UNIT
+	tribe	= Tribe.AARD
+	cost	= (0, 0)
+	stats	= (1, 1)
 
 
 #------------------------------------------------------------------------------
 # Spells
 #------------------------------------------------------------------------------
+
+class RageheartInitiation:
+	name	= "Rageheart Initiation"
+	text	= "A Unit gains Fury, or put a 1/1 Aard into play with Fury."
+	type	= CardType.SPELL
+	tribe	= Tribe.AARD
+	cost	= (0, 1)
+	play	= Summon(CONTROLLER, "RaidpackRally_Token") * 2
+
+class RageheartInitiation_Choice1:
+	name	= "Rageheart Initiation"
+	text	= "Give a unit Fury."
+	type	= CardType.SPELL
+	tribe	= Tribe.AARD
+	cost	= (0, 1)
+	play	= Buff(TARGET, "RageheartInitiation_Choice1_Buff")
+
+RageheartInitiation_Choice1_Buff = buff(fury=1)
+
+class RageheartInitiation_Choice2:
+	name	= "Rageheart Initiation"
+	text	= "Put a 1/1 Aard into play with Fury."
+	type	= CardType.SPELL
+	tribe	= Tribe.AARD
+	cost	= (0, 1)
+	play	= Summon(CONTROLLER, "RageheartInitiation_Token")
+
+class RageheartInitiation_Token:
+	name	= "Aard"
+	type	= CardType.UNIT
+	tribe	= Tribe.AARD
+	cost	= (0, 0)
+	stats	= (1, 1)
+	fury	= 1
 
 class RaidpackRally:
 	name	= "Raidpack Rally"
@@ -179,7 +220,8 @@ class PlayerCard:
 	text	= "Fury"
 	type	= CardType.PLAYER
 	tribe	= Tribe.AARD
-	cost	= (1, 1)
+	morale	= 1
+	supply	= 1
 	stats	= (0, 100)
 	max_hand_size = 6
 
