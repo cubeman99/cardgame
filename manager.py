@@ -96,16 +96,25 @@ class GameManager(Manager):
 
 class PlayerManager(Manager):
 	map = {
+		GameTag.CARD_TYPE:		"type",
+		GameTag.NAME:			"name",
 		GameTag.POWER:			"power",
 		GameTag.HEALTH:			"max_health",
 		GameTag.TERRITORY:		"territory",
 		GameTag.MORALE:			"morale",
 		GameTag.SUPPLY:			"supply",
 		GameTag.MAX_HAND_SIZE:	"max_hand_size",
+		GameTag.CONTROLLER:		"controller",
+		GameTag.ZONE:			"zone",
+		GameTag.TEXT:			None,
 	}
+
 
 class CardManager(Manager):
 	map = {
+		GameTag.CARD_TYPE:		"type",
+		GameTag.NAME:			"name",
+
 		GameTag.POWER:			"power",
 		GameTag.HEALTH:			"max_health",
 		GameTag.MORALE:			"morale",
@@ -117,6 +126,9 @@ class CardManager(Manager):
 		GameTag.INFORM:			"inform",
 		GameTag.MAX_HAND_SIZE:	"max_hand_size",
 		GameTag.TERRITORY:		"territory",
+		GameTag.CONTROLLER:		"controller",
+		GameTag.ZONE:			"zone",
+		GameTag.TEXT:			None,
 	}
 
 # Base class for all observers

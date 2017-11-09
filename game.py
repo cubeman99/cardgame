@@ -107,8 +107,8 @@ class Game(Entity):
 
 	def print_state(self):
 		print("GAME STATE:")
-		#for entity in self.entities:
-		#	print(" %3d. %r" %(entity.entity_id, entity))
+		for entity in self:
+			print(" %3d. %r" %(entity.entity_id, entity))
 		for player in self.players:
 			print("  %r" %(player))
 			#for entity in player.entities:

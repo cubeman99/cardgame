@@ -56,6 +56,8 @@ class CardDatabase(dict):
 					setattr(card.scripts, script, [actions])
 					#setattr(card.scripts, script, [actions, ))
 
+		card.tags[GameTag.CARD_ID] = id
+
 		# Step the card's type
 		card.tags[GameTag.CARD_TYPE] = getattr(card_info, "type", CardType.INVALID)
 

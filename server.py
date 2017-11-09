@@ -14,37 +14,37 @@ import re
 import traceback
 import socket
 from messages import *
-
-#class ServerResponse:
-#	INVALID			= 0,
-
-
-"""
-class ClientAction:
-	def __init__(self):
-		pass
-
-class DeclareAttack(ClientAction):
-	ATTACKER = ActionArg()
-	DEFENDER = ActionArg()
-
-class Play(ClientAction):
-	pass
-	CARD = CardArg()
-	# Targets...
-
-class Flip(ClientAction):
-	pass
-	CARD = CardArg()
+from threading import Thread
+#from SocketServer import ThreadingMixIn
 
 
-class Server:
+class ClientThread(Thread):
 
-	def __init__(self):
-		self.game = None
-"""
+	def __init__(self, server, player, connection, ip, port):
+		Thread.__init__(self)
+		self.server = server
+		self.player = player
+		self.connection = connection
+		self.ip = ip
+		self.port = port
 
+	def run(self):
+		"""Run the client thread"""
+		while True:
+			data = self.connection.recv(2048)
+			if not data:
+				break
+			self.server.receive_data(self.player, data)
 
+	def send_message(self, message):
+		data = message.pack()
+		self.send_data(data)
+
+	def send_data(self, data):
+		print("Sending to %s: %d bytes" %(self.player, len(data)))
+		# Prefix each message with a 4-byte length (network byte order)
+		data = struct.pack('i', len(data)) + data
+		self.connection.send(data)
 
 
 HOST = ''
@@ -82,10 +82,13 @@ test_deck = [
 	(1, "ExtremePressure"),
 ]
 
+test_deck = []
+
 class Server:
 
 	def __init__(self):
 		self.game = None
+		self.connections = []
 		cards.db.initialize()
 
 	def prepare_game(self):
@@ -129,29 +132,84 @@ class Server:
 		self.game.player1.shuffle_deck()
 		self.game.player2.shuffle_deck()
 		self.game.begin_turn(self.game.player1)
+		self.game.player1.hand[0].play()
 
-	def connect(self):
+		self.game.print_state()
+
+	def bind(self):
+		"""Bind the server to an address"""
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self.socket.bind((HOST, PORT))
 
 	def run(self):
 		"""Run the server"""
 
-		# Bind the socket.
-		self.socket.bind((HOST, PORT))
-		self.socket.listen(1)
-
 		# Accept client connections.
-		conn, addr = self.socket.accept()
-		print("Connected by %s" %(str(addr)))
-		while 1:
-			data = conn.recv(1024)
-			if not data:
-				break
-			self.receive(self.game.player1, data)
-			#conn.sendall(data)
-		conn.close()
+		while True:
+			self.socket.listen(4)
 
-	def receive(self, player, data):
+			self.socket.listen(1)
+			conn, (ip, port) = self.socket.accept()
+
+			# Find a player that hasn't Connected
+			thread_player = None
+			for player in self.game.players:
+				success = True
+				for thread in self.connections:
+					if thread.player == player:
+						success = False
+						break
+				if success:
+					thread_player = player
+					break
+
+			if not thread_player:
+				print("Error: a client tried to connect but game is full")
+				data = Message(ServerMessage.GAME_FULL).pack()
+				conn.send_data(data)
+				conn.close()
+			else:
+				print("%s has connected!" %(thread_player))
+				thread_player.connection = conn
+				thread = ClientThread(self, thread_player, conn, ip, port)
+				thread.start()
+				#thread.send_message(Message(ServerMessage.GAME_FULL))
+				self.connections.append(thread)
+
+				data = MessageData(ServerMessage.CREATE_GAME)
+				data.write_int(data.type)
+				entities = []
+				for entity in self.game:
+					entities.append((entity.entity_id, entity.tags))
+				data.write_game_state(entities)
+				thread.send_data(data.data)
+
+				#self.send(thread_player, Message(ServerMessage.GAME_FULL))
+				#self.send(thread_player, Message(ServerMessage.TAG_CHANGE, 14, GameTag.HEALTH, 69))
+
+		# Wait for all threads to finish.
+		for thread in self.connections:
+			thread.join()
+
+	def send(self, players, message):
+		"""Send a message to a set of players"""
+		if not isinstance(players, list):
+			players = [players]
+		data = message.pack()
+		for connection in self.connections:
+			if connection.player in players:
+				color_print("Sending to %s: {yellow}%s{}\n" %(connection.player, message))
+				connection.send_data(data)
+
+	def broadcast(self, player, message):
+		"""Send a message to all players"""
+		color_print("Broadcasting message: {yellow}%s{}\n" %(message))
+		data = message.pack()
+		self.socket.sendall(data)
+		pass
+
+	def receive_data(self, player, data):
 		"""Decode a packet of bytes received from the given player"""
 		message = Message()
 		message.unpack(data)
@@ -161,7 +219,7 @@ class Server:
 		"""Decode a message received from the given player"""
 
 		# Print out the message
-		color_print("Received from %s: {yellow}%s{}\n" %("player1", message))
+		color_print("Received from %s: {yellow}%s{}\n" %(player, message))
 
 		if message.type == ClientMessage.PLAY:
 			card = self.game.find_entity(message.args[0])
@@ -226,6 +284,6 @@ class Server:
 if __name__=="__main__":
 	server = Server()
 	server.prepare_game()
-	server.connect()
+	server.bind()
 	server.run()
 

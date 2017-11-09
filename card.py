@@ -12,6 +12,7 @@ class BaseCard(Entity):
 
 	def __init__(self, data):
 		self.data = data
+		self.name = ""
 		super().__init__()
 		#self.requirements = data.requirements.copy()
 		self.id = data.id
@@ -19,6 +20,8 @@ class BaseCard(Entity):
 		self._zone = Zone.INVALID
 		self._events = data.scripts.events
 		self.tags.update(data.tags)
+		print(data.tags)
+		self.type = data.type
 
 	def buff(self, target, buff, **kwargs):
 		"""
@@ -68,13 +71,9 @@ class BaseCard(Entity):
 		#return "%s(%s, %s)" % (self.__class__.__name__, self.data.__class__.__name__, self.owner.name)
 		# return "%s(name=%r,owner=%r)" % (self.__class__.__name__, self.data.name, self.owner.name)
 
-	@property
-	def type(self):
-		return self.data.type
-
-	@property
-	def name(self):
-		return self.data.name
+	#@property
+	#def name(self):
+	#	return self.data.name
 
 	@property
 	def game(self):

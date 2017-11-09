@@ -19,7 +19,7 @@ class BaseEntity(object):
 		self.buffs = []
 		self.uuid = uuid.uuid4()
 		self.source_of_death = None
-
+	
 	#def _getattr(self, attr, i):
 		#return getattr(self, attr)
 	#	i += getattr(self, "_" + attr, 0)

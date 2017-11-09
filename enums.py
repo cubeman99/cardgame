@@ -13,7 +13,7 @@ class GameTag(IntEnum):
 	TRIBE			= 3
 	CARD_TYPE		= 4
 	REQUIREMENT		= 5
-	OWNER			= 6
+	CONTROLLER		= 6
 	RESOURCE_TYPE	= 7
 	MORALE			= 8
 	SUPPLY			= 9
@@ -22,6 +22,11 @@ class GameTag(IntEnum):
 	TEXT			= 12
 	TERRITORY		= 13
 	MAX_HAND_SIZE	= 14
+
+	STEP			= 15
+	NEXT_STEP		= 16
+
+	CARD_ID			= 17
 
 	# Keywords
 	MUDDLE		= 100
@@ -47,6 +52,19 @@ class GameTag(IntEnum):
 	@property
 	def string_type(self):
 		return self.type == Type.STRING
+
+STRING_TAGS = [
+	GameTag.NAME,
+	GameTag.TEXT,
+	GameTag.CARD_ID,
+]
+
+# Create dictionary of tag names.
+# NOTE: Client and Server message IDs do not intersect.
+TAG_NAMES = {}
+tags = [(getattr(GameTag, attr), attr) for attr in dir(GameTag) if not callable(getattr(GameTag, attr)) and not attr.startswith("__")]
+for tag, name in tags:
+	TAG_NAMES[tag] = name
 
 # Action Block Type
 class BlockType(IntEnum):
