@@ -1,8 +1,7 @@
 
 from entity import Entity, int_property
 from manager import Manager, CardManager
-#import cards
-#from cards import db
+from itertools import chain
 from enums import *
 
 MAX_HAND_SIZE = 6
@@ -20,8 +19,19 @@ class BaseCard(Entity):
 		self._zone = Zone.INVALID
 		self._events = data.scripts.events
 		self.tags.update(data.tags)
-		print(data.tags)
 		self.type = data.type
+		self.owner = None
+
+	@property
+	def entities(self):
+		return chain([self], self.buffs)
+
+	@property
+	def targets(self):
+		return []
+
+	def __hash__(self):
+		return self.id.__hash__()
 
 	def buff(self, target, buff, **kwargs):
 		"""
@@ -66,22 +76,11 @@ class BaseCard(Entity):
 		return self.data.name
 
 	def __repr__(self):
-		#return "%s(%s)" % (self.data.id, self.controller.name)
 		return "%s(%s)" % (self.data.id, self.entity_id)
-		#return "%s(%s, %s)" % (self.__class__.__name__, self.data.__class__.__name__, self.owner.name)
-		# return "%s(name=%r,owner=%r)" % (self.__class__.__name__, self.data.name, self.owner.name)
-
-	#@property
-	#def name(self):
-	#	return self.data.name
 
 	@property
 	def game(self):
 		return self.controller.game
-
-	#@game.setter
-	#def game(self, value):
-	#	self.game = value
 
 	@property
 	def zone(self):
@@ -159,7 +158,6 @@ class BaseCard(Entity):
 		self.zone = Zone.HAND
 		actions = self.get_actions("draw")
 		self.game.trigger(self, actions, event_args=None)
-			#self.owner.cards_drawn_this_turn += 1
 
 	#def heal(self, target, amount):
 		#return self.game.
@@ -169,10 +167,11 @@ class LiveEntity(BaseCard):
 	power		= int_property("power")
 	#power = 0
 	max_health	= int_property("max_health")
+	damage		= int_property("damage")
 
 	def __init__(self, data):
 		super().__init__(data)
-		self.damage = 0
+		#self.damage = 0
 		self._to_be_destroyed = False
 		self.source_of_death = None
 
@@ -247,20 +246,32 @@ class LiveEntity(BaseCard):
 # Unit
 #------------------------------------------------------------------------------
 class Unit(LiveEntity):
-	inspire	= int_property("inspire")
-	spy		= int_property("spy")
-	inform	= int_property("inform")
+	inspire			= int_property("inspire")
+	spy				= int_property("spy")
+	inform			= int_property("inform")
+	declared_attack		= None
+	declared_intercept	= None
 
 	def __init__(self, data):
 		super().__init__(data)
 
-	#@property
-	#def power(self):
-	#	return self.data.power
+	@property
+	def attack_targets(self):
+		return self.controller.opponent.field
+
+	@property
+	def intercept_targets(self):
+		return []
 
 	@property
 	def health(self):
 		return self.max_health - self.damage
+
+	def can_attack(self):
+		return self.power > 0 and self.game.current_player == self.controller
+
+	def can_intercept(self):
+		return self.game.current_player == self.controller
 
 	def _set_zone(self, value):
 		# Only units can go into a player's field.
@@ -366,5 +377,5 @@ class Effect(BaseCard):
 		self.zone = Zone.PLAY
 
 	def remove(self):
-		self.zone = Zone.REMOVED_FROM_GAME
+		self.game.remove_entity(self)
 

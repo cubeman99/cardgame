@@ -1,37 +1,38 @@
 
 import socket
-from threading import Thread
+import threading
 from colors import *
 from messages import *
 from enums import *
-from client.entities import Entity, Game, Player, Card
+from client.entities import Entity, Game, Player, Card, Option
+import card_details
 import traceback
+import json
+import argparse
 
-HOST = 'localhost'
-PORT = 50007
 
+class ReceiveThread(threading.Thread):
+	"""Thread responsible for receiving messages from the server"""
 
-class ReceiveThread(Thread):
-
-	def __init__(self, client, socket):
-		Thread.__init__(self)
+	def __init__(self, client, socket, event):
+		threading.Thread.__init__(self)
 		self.client = client
 		self.socket = socket
-
-	def start(self):
-		self.run()
+		self.event = event
 
 	def run(self):
 		"""Run the receive thread"""
-		while True:
+		self.socket.settimeout(1.0)
+		while not self.event.is_set():
 			#data = self.socket.recv(2048)
 			data = self.recv_msg()
 			if not data:
-				break
+				continue
 			print("Received %d bytes from server" %(len(data)))
 			#try:
 			self.client.receive_data(data)
 			self.client.print_game_state()
+			color_print("{green}Your action:{} ")
 			#except Exception as e:
 			#traceback.print_exc(file=sys.stdout)
 			#color_print("Exception: {yellow}%r{}" %(e))
@@ -49,11 +50,18 @@ class ReceiveThread(Thread):
 		"""Helper function to recv n bytes or return None if EOF is hit"""
 		data = b""
 		while len(data) < n:
-			packet = self.socket.recv(n - len(data))
+			try:
+				packet = self.socket.recv(n - len(data))
+			except:
+				if self.event.is_set():
+					return None
+				else:
+					continue
 			if not packet:
 				return None
 			data += packet
-			return data
+		return data
+
 
 
 class Client:
@@ -61,26 +69,62 @@ class Client:
 	def __init__(self):
 		self.game = Game(0)
 		self.game.create({})
+		self.receive_thread = None
+		self.exit = False
+		self.serializer = json.JSONEncoder()
+		self.player_id = None
 
-	def connect(self):
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket.connect((HOST, PORT))
+	@property
+	def player(self):
+		for player in self.game.players:
+			if player.id == self.player_id:
+				return player
+		return None
+
+	@property
+	def opponent(self):
+		for player in self.game.players:
+			if player.id != self.player_id:
+				return player
+		return None
+
+	def connect(self, host, port):
+		"""Connect to the server"""
+		print("Attempting connection to %s:%d" %(host, port))
+		try:
+			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self.socket.connect((host, port))
+		except:
+			return False
 		print("Connected to server!")
 
 		# Start the receiving thread.
-		thread = ReceiveThread(self, self.socket)
-		thread.start()
+		self.event = threading.Event()
+		self.receive_thread = ReceiveThread(self, self.socket, event=self.event)
+		self.receive_thread.start()
+		return True
 
 	def run(self):
-		while True:
-			action, args = self.prompt_action()
-			if action != None:
-				message = self.parse_action(action, args)
-				if message != None:
-					self.send(message)
+		"""Run the client, endlessly prompting for actions"""
+		self.exit = False
+		while not self.exit:
+			try:
+				action, args = self.prompt_action()
+				if action != None:
+					message = self.parse_action(action, args)
+					if message != None:
+						self.send(message)
+			except KeyboardInterrupt:
+				print("")
+				self.exit = True
 
-	def prompt_action(self, prompt="Your action: "):
-		color_print(prompt)
+		color_print("{yellow}Disconnecting...{}\n")
+		# Send a disconnect packet
+		self.send({"Type": "Disconnect"})
+		self.event.set()
+
+	def prompt_action(self):
+		color_print("{green}Your action:{} ")
 		action = input()
 		args = action.split()
 		if len(args) == 0:
@@ -89,139 +133,275 @@ class Client:
 		args = args[1:]
 		return action, args
 
-	def send(self, message):
-		color_print("Sending to server: {yellow}%s{}\n" %(message))
-		packet = message.pack()
-		self.socket.sendall(packet)
-		pass
+	def send(self, data):
+		#color_print("Sending to server: {yellow}%s{}\n" %(message))
+		#packet = message.pack()
+		#self.socket.sendall(packet)
+
+		# Prefix each message with a 4-byte length (network byte order)
+		data = self.serializer.encode(data).encode("utf-8")
+		data = struct.pack('i', len(data)) + data
+		print("Sending %d bytes to server" %(len(data)))
+		self.socket.sendall(data)
 
 	def parse_action(self, action, args):
 		msg = Message(ClientMessage.INVALID)
 
+		# Play a card
+		# Usage: play CARD TODO: targets
 		if action == "play":
-			msg.type = ClientMessage.PLAY
-			msg.args = [int(args[0])]
+			#msg.type = ClientMessage.PLAY
+			#msg.args = [int(args[0])]
+			return {
+				"Type": "Play",
+				"Play": {
+					"EntityID": int(args[0]),
+				}
+			}
 
+		# Flip (or unflip) a unit
+		# Usage: flip UNIT
 		elif action == "flip":
-			msg.type = ClientMessage.FLIP
-			msg.args = [int(args[0])]
+			return {
+				"Type": "Flip",
+				"Flip": {
+					"Unit": int(args[0]),
+				}
+			}
 
+		# Declare an attack
+		# Usage: attack ATTACKER DEFENDER
 		elif action == "attack":
-			msg.type = ClientMessage.DECLARE_ATTACK
-			msg.args = [int(args[0]), int(args[1])]
+			return {
+				"Type": "Attack",
+				"Attack": {
+					"Attacker": int(args[0]),
+					"Defender": int(args[1]),
+				}
+			}
 
+		# Declare an intercept
+		# Usage: intercept INTERCEPTOR DEFENDER
 		elif action == "intercept":
-			msg.type = ClientMessage.DECLARE_INTERCEPT
-			msg.args = [int(args[0]), int(args[1])]
+			return {
+				"Type": "intercept",
+				"intercept": {
+					"Interceptor": int(args[0]),
+					"Defender": int(args[1]),
+				}
+			}
 
+		# Cancel a declared attack or intercept
+		# Usage: cancel UNIT
+		elif action == "cancel":
+			#attacker = self.game.find_entity_by_id((int(args[0])))
+			return {
+				"Type": "CancelAttack",
+				"CancelAttack": {
+					"Attacker": int(args[0]),
+				}
+			}
+
+		# Usage: done
 		elif action == "done":
-			msg.type = ClientMessage.DONE
-			msg.args = []
+			return { "Type": "Done" }
 
-		if msg.type == ClientMessage.INVALID:
+		# DEBUG: perform an attack
+		elif action == "atk":
+			return {
+				"Type": "DebugAttack",
+				"DebugAttack": {
+					"Attacker": int(args[0]),
+					"Defender": int(args[1]),
+				}
+			}
+
+		# DEBUG: Restart the game
+		elif action == "restart":
+			return { "Type": "DebugRestart" }
+
+		# DEBUG: Rollback game to the beggining of the turn.
+		elif action == "rollback":
+			return { "Type": "DebugRollback" }
+
+		# View the game state
+		# Usage: view
+		elif action == "view":
+			self.print_game_state()
 			return None
-		return msg
 
+		# Print out info about an entity
+		# Usage: info ENTITY
+		elif action == "info":
+			entity = self.game.find_entity_by_id(int(args[0]))
+			if entity:
+				color_print("Entity %d ({card_name}%s{})\n" %(entity.id, entity.card_id))
+				print("Tags:")
+				for key, value in entity.tags.items():
+					tag = GameTag(key)
+					value_color = ""
+					buff_note = ""
+					buff_amount = entity.get_tag_buff_amount(key)
+					if buff_amount > 0:
+						value_color = "green"
+						buff_note = " ({%s}+%d{})" %(value_color, buff_amount)
+					elif buff_amount < 0:
+						value_color = "red"
+						buff_note = " ({%s}%d{})" %(value_color, buff_amount)
+					color_print("   %s = {%s}%r{}%s\n" %(tag.name, value_color, value, buff_note))
+				print("Buffs:")
+				for buff in entity.buffs:
+					color_print("   %3d. {card_name}%s{}: " %(buff.id, buff.card_id))
+					for key, value in buff.tags.items():
+						tag = GameTag(key)
+						if tag not in (GameTag.CARD_TYPE, GameTag.OWNER,
+							GameTag.CONTROLLER, GameTag.ZONE, GameTag.NAME):
+							color_print("%s=%r, " %(tag.name, value))
+					color_print("\n")
+			return None
 
-		#color_print("{red}%s:{} %s\n" %(action, args))
-		#pass
+		# Exit the game
+		# Usage: exit
+		elif action == "exit":
+			self.exit = True
+			return None
+
+		# Concede the game.
+		# Usage: concede
+		elif action == "concede":
+			self.exit = True
+			return { "Type": "Concede" }
+
+		# Unknown action.
+		else:
+			print("Invalid action '%s'" %(action))
+			return None
+
+		return None
 
 
 	def receive_data(self, data):
 		"""Decode a packet of bytes received from the server"""
-		data = MessageData(ServerMessage.INVALID, data)
-		data.type = data.read_int()
-		#message = Message()
-		#message.unpack(data)
-		self.receive_message(data.type, data)
 
-	def receive_message(self, type, data):
-		"""Decode a message received from the server"""
+		encoder = json.JSONDecoder()
+		state = encoder.decode(data.decode("utf-8"))
 
-		# Print out the message
-		#color_print("Received from server: {yellow}%s{}\n" %(MESSAGE_NAMES[type]))
-		color_print("Received from server: {yellow}%d{}\n" %(type))
+		for thing in state:
+			type = thing["Type"]
+			data = thing[type]
 
-		if type == ServerMessage.GAME_FULL:
-			print("GAME FULL!!")
+			if type == "Welcome":
+				self.player_id = data["PlayerID"]
+				print("I joined as player ID %d" %(self.player_id))
 
-		elif type == ServerMessage.CREATE_GAME:
-			pass
-			entities = data.read_game_state()
-			for id, tags in entities:
+			if type == "FullEntity":
+				card_id = data["CardID"]
+				entity_id = data["EntityID"]
+				tags = {}
+				for key, value in data["Tags"].items():
+					tag = GameTag(int(key))
+					tags[int(key)] = value
+				entity = None
 				if tags[GameTag.CARD_TYPE] == CardType.PLAYER:
-					entity = Player(id, "Player")
+					entity = Player(entity_id, "Player")
+					data = card_details.find(card_id)
+					entity.tags.update(data.tags)
+					entity.tags.update(tags)
+					self.game.register_entity(entity)
+					print("Creating player")
 				else:
-					entity = Entity(id)
+					entity = self.game.create_card(entity_id, card_id, tags)
 
-				entity.tags = tags
-				self.game.register_entity(entity)
-				#print("Creating entity ID %d" %(id))
+			elif type == "TagChange":
+				entity_id = data["EntityID"]
+				tag = GameTag(int(data["Tag"]))
+				value = int(data["Value"])
+				entity = self.game.find_entity_by_id(entity_id)
+				if entity:
+					entity.tags[tag] = value
 
-		elif type == ServerMessage.TAG_CHANGE:
-			id, tags = data.read_tags()
-			entity = self.game.find_entity_by_id(id)
-			if not entity:
-				entity = Entity(id)
-				self.game.register_entity(id)
-				print("Creating entity id %d" %(id))
-			for tag in tags:
-				entity.tags[tag] = value
-				print("Setting tag %d to %d for entity %d" %(tag, value, id))
+			elif type == "Options":
+				options = thing["Options"]
+				self.game.options = []
+				for option in options:
+					option_type = OptionType(option["Type"])
+					option_args = option.get("MainOption", {})
+					print("Option %s: %s" %(option_type.name, option_args))
+					self.game.options.append(Option(
+						type=option_type,
+						args=option_args))
 
 	def print_game_state(self):
 		max_name_length = 0
 		for entity in self.game.entities:
+			#print("%d. %s - %r" %(entity.id, entity.tags.get(GameTag.NAME, "?"), entity.controller))
 			if GameTag.CARD_TYPE in entity.tags.keys() and\
 				entity.tags[GameTag.CARD_TYPE] == CardType.UNIT:
 				max_name_length = max(max_name_length, len(entity.tags[GameTag.NAME]))
 		format = " %3d. %dm%ds - %d/%d {card_name}" + "%%-%ds" %(max_name_length + 2) + "{} {card_text}%s{}\n"
 
-		self.print_card_list(self.game.players[0].field)
+		player = self.player
+		opponent = self.opponent
 
-		for entity in self.game.entities:
+		print("")
+		self.print_player_info(opponent, "Opponent")
+		print("")
+		self.print_card_list([e for e in player.hand], "Opponent's hand:")
+		print("")
+		self.print_card_list([e for e in player.field], "Opponent's field:")
+		self.print_card_list([e for e in opponent.field], "Your field:")
+		print("")
+		self.print_card_list([e for e in opponent.hand], "Your hand:")
+		print("")
+		self.print_player_info(player, "You")
+		print("")
 
-			if GameTag.CARD_TYPE in entity.tags.keys() and\
-				entity.tags[GameTag.CARD_TYPE] == CardType.UNIT:
-				#print("Entity %d: %s"%(entity.id, entity.tags))
-				power = entity.tags[GameTag.POWER]
-				health = entity.tags[GameTag.HEALTH]
-				morale = entity.tags[GameTag.MORALE]
-				supply = entity.tags[GameTag.SUPPLY]
-				name = entity.tags[GameTag.NAME]
-				text = entity.tags[GameTag.TEXT]
-				color_print(format %(entity.id, morale, supply, power, health, name, text))
+	def print_player_info(self, player, name):
+		deck_size = len([card for card in player.deck])
+		color_print("{yellow}%s:{} %d. Morale: %d, Supply: %d, Territory: %d, Deck: %d cards\n" %(
+			name,
+			player.id,
+			player.morale,
+			player.supply,
+			player.territory,
+			deck_size))
 
 	def print_card_list(self, card_list, name=None):
 		if name != None:
-			print("%s" %(name))
+			color_print("{yellow}%s{}\n" %(name))
 
 		max_name_length = 1
 		count = 0
 		for card in card_list:
-			max_name_length = max(max_name_length, len(card.data.name))
+			max_name_length = max(max_name_length, len(card.tags.get(GameTag.NAME, "?")))
 
 		for card in card_list:
 			count += 1
 			id_color = ""
-			#if card.is_playable():
-			#	id_color = "playable"
+			options = [opt for opt in card.options]
+			if len(options) > 0:
+				id_color = "playable"
 			color_print("  {%s}%3d.{} %dm/%ds - " %(
 				id_color,
 				card.id,
 				card.morale,
 				card.supply))
 
+			# Print power/health
 			if card.type == CardType.UNIT:
+				health_buff = card.get_tag_buff_amount(GameTag.HEALTH)
+				power_buff = card.get_tag_buff_amount(GameTag.POWER)
+
 				# Colorize power: buffed = green
 				power_color = "default"
-				if card.power > card.data.power:
+				if power_buff > 0:
 					power_color = "buffed_stat"
+
 				# Colorize health: damaged = red, else buffed = green
 				health_color = "default"
-				if card.damaged:
+				if card.health < card.max_health:
 					health_color = "damaged_health"
-				elif card.max_health > card.data.health:
+				elif health_buff > 0:
 					health_color = "buffed_stat"
 
 				color_print("{%s}%d{}/{%s}%d{}" %(
@@ -231,23 +411,59 @@ class Client:
 			else:
 				sys.stdout.write("   ")
 
-			format = " {card_name}%-" + str(max_name_length) + "s{}  {card_text}%s{}\n"
-			color_print(format %(
-				card.name,
-				card.data.text))
+			# Print name. TODO: colorize spell/unit
+			name_color = "card_name_unit" if card.type == CardType.UNIT else "card_name_spell"
+			format = " {%s}%%-" %(name_color) + str(max_name_length) + "s{}"
+			color_print(format %(card.name))
+
+			# Print declared attack/intercept
+			if card.type == CardType.UNIT:
+				declared_attack = card.tags.get(GameTag.DECLARED_ATTACK, 0)
+				declared_intercept = card.tags.get(GameTag.DECLARED_INTERCEPT, 0)
+				if declared_attack:
+					color_print(" {red}>> %d{}" %(declared_attack))
+				elif declared_intercept:
+					color_print(" {cyan}>> %d{}" %(declared_intercept))
+
+			# Print text
+			color_print("  {card_text}%s{}\n" %(card.tags.get(GameTag.TEXT, "")))
 
 		if count == 0:
-			print("  (empty)")
+			print("      (empty)")
+
+
+
 
 if __name__=="__main__":
+	DEFAULT_HOST = "localhost"
+	DEFAULT_PORT = 50007
+
+	# Parse the command line arguments
+	parser = argparse.ArgumentParser(description='Run the cardgame client.')
+	parser.add_argument('host', metavar='HOST', type=str,
+		default=DEFAULT_HOST, nargs="?",
+		help="Optional host IP address and optional port to connect to (in the format \"host:port\"). The default host is '%s' and the default port is %d." %(DEFAULT_HOST, DEFAULT_PORT))
+	args = parser.parse_args()
+
+	# Parse the host IP/PORT in the format: "host:port"
+	# The port is optional
+	# TODO: Handle parse errors here
+	split_host = args.host.split(":")
+	host = split_host[0]
+	port = DEFAULT_PORT
+	if len(split_host) >= 2:
+		port = int(split_host[1])
+
+	# Initialize the Client
 	client = Client()
-	client.connect()
-	client.run()
-	#game = Game(1)
-	#game.create({})
-	#card = Card(3, "RageheartThug")
-	#game.register_entity(card)
-	#x = game.find_entity_by_id(3)
+
+	# Connect to the server and run the client.
+	if client.connect(host=host, port=port):
+		client.run()
+	else:
+		print("Failed to connect to server!")
+		exit(2)
+
 
 
 

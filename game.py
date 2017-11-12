@@ -23,6 +23,7 @@ class Game(Entity):
 		self.zone = Zone.PLAY
 		self.type = CardType.GAME
 		self.data = None
+		self.removed_entities = []
 
 		players = [
 			self.create_card("PlayerCard"),
@@ -38,7 +39,6 @@ class Game(Entity):
 		self.active_aura_buffs = CardList()
 
 		self.players = players
-		self.current_player = players[0]
 		self.player1 = players[0]
 		self.player2 = players[1]
 		self.player1.name = "Player1"
@@ -52,16 +52,14 @@ class Game(Entity):
 			player.game = self
 			self.manager.new_entity(player)
 
+		self.current_player = players[0] # Player whose turn it is.
+		self.choosing_player = players[0] # Player who is currently choosing an actionvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
 	def __str__(self):
 		return "Game"
 
 	def __repr__(self):
 		return "%s" % (self.__class__.__name__)
-
-	# Iterate over all entities
-	def __iter__(self):
-		return chain(self.players, self.hands, self.board, self.decks, self.discarded)
-		#return chain(self.entities, self.hands, self.board, self.decks, self.discarded)
 
 	# Function to create a card instance of the correct class.
 	def create_card(self, id):
@@ -88,6 +86,19 @@ class Game(Entity):
 			return self.players[1]
 		else:
 			return self.players[0]
+
+	# Iterate over all entities
+	def __iter__(self):
+		return chain(self.entities, self.hands, self.decks, self.discarded)
+
+	@property
+	def entities(self):
+		return CardList(chain(self.players[0].entities, self.players[1].entities))
+		#return CardList(chain([self], self.players[0].entities, self.players[1].entities))
+
+	@property
+	def live_entities(self):
+		return CardList(chain(self.players[0].live_entities, self.players[1].live_entities))
 
 	@property
 	def board(self):
@@ -170,13 +181,17 @@ class Game(Entity):
 			return entity[0]
 		return None
 
-	@property
-	def entities(self):
-		return CardList(chain([self], self.players[0].entities, self.players[1].entities))
+	def find_removed_entity(self, id):
+		entity = [e for e in self.removed_entities if e.entity_id == id]
+		if len(entity) > 0:
+			return entity[0]
+		return None
 
-	@property
-	def live_entities(self):
-		return CardList(chain(self.players[0].live_entities, self.players[1].live_entities))
+	def remove_entity(self, entity):
+		"""Remove an entity from the game, changing its zone to
+		REMOVED_FROM_GAME"""
+		entity.zone = Zone.REMOVED_FROM_GAME
+		self.removed_entities.append(entity)
 
 	def process_deaths(self):
 		cards = []

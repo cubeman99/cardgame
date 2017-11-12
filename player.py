@@ -52,8 +52,8 @@ class Player(LiveEntity):
 	@property
 	def entities(self):
 		for entity in self.field:
-			yield entity
-			#yield from entity.entities
+			yield from entity.entities
+		yield from self.buffs
 		yield self
 
 	@property
@@ -61,12 +61,16 @@ class Player(LiveEntity):
 		yield from self.field
 
 	@property
+	def actionable_entities(self):
+		yield from self.field
+		yield from self.hand
+
+	@property
 	def health(self):
 		return 100 # players don't have health
 
 	# Create a new card controlled by this player.
 	def card(self, id, source=None, parent=None, zone=Zone.SET_ASIDE):
-		#card = self.game.Card(id)
 		card = self.game.create_card(id)
 		card.controller = self
 		card.zone = zone

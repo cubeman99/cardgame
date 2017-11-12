@@ -348,7 +348,7 @@ class Summon(TargetedAction):
 			target = target.eval(source)
 
 		for card in cards:
-			action_log.log("Summoning %s for %s", card.name, target)
+			action_log.log("Summoning %r for %s", card, target)
 
 			# Set the card's controller
 			if card.controller != target:
@@ -391,7 +391,7 @@ class Play(GameAction):
 			emerge_actions = card.get_actions("emerge")
 		elif card.type == CardType.SPELL:
 			emerge_actions = card.get_actions("play")
-		
+
 		if len(emerge_actions) > 0:
 			source.game.queue_actions(card, [Emerge(card, card.target)])
 
@@ -427,7 +427,7 @@ class BeginTurn(GameAction):
 	def invoke(self, source, player):
 		#source.manager.step(source.next_step, Step.MAIN_READY)
 		source.turn += 1
-		source.log("%s begins turn %i", player, source.turn)
+		action_log.log("%s begins turn %i", player, source.turn)
 		source.current_player = player
 		#source.manager.step(source.next_step, Step.MAIN_START_TRIGGERS)
 		#source.manager.step(source.next_step, source.next_step)

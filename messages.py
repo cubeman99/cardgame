@@ -57,7 +57,7 @@ class MessageData:
 	def read_entity(self):
 		id = self.read_int()
 		tags = self.read_tags()
-		print("ENTITY ID %d" %(id))
+		#print("ENTITY ID %d" %(id))
 		return id, tags
 
 	def read_tags(self):
@@ -69,12 +69,17 @@ class MessageData:
 		return tags
 
 	def read_tag(self):
-		key = self.read_int()
-		if key in STRING_TAGS:
-			value = self.read_string()
-		else:
+		key = GameTag(self.read_int())
+		type = GameTag(key).type
+		if type == Type.NUMBER:
 			value = self.read_int()
-		print("    %s = %r" %(TAG_NAMES[key], value))
+		elif type == Type.BOOL:
+			value = bool(self.read_int())
+		elif type == Type.STRING:
+			value = self.read_string()
+		elif type == Type.ENTITY:
+			value = self.read_int()
+		print("%s : %s = %r" %(key, type, value))
 		return key, value
 
 	def read_int(self):
@@ -97,11 +102,17 @@ class MessageData:
 		self.data += byte_string
 
 	def write_tag(self, key, value):
-		self.write_int(key)
-		if key in STRING_TAGS:
-			self.write_string(value)
-		else:
+		type = GameTag(key).type
+		self.write_int(int(key))
+		print("%s : %s = %r" %(GameTag(key), type, value))
+		if type == Type.NUMBER:
 			self.write_int(value)
+		elif type == Type.BOOL:
+			self.write_int(1 if value else 0)
+		elif type == Type.STRING:
+			self.write_string(value)
+		elif type == Type.ENTITY:
+			self.write_int(value.entity_id)
 
 	def write_tags(self, tags):
 		valid_tags = 0

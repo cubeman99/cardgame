@@ -19,7 +19,7 @@ class BaseEntity(object):
 		self.buffs = []
 		self.uuid = uuid.uuid4()
 		self.source_of_death = None
-	
+
 	#def _getattr(self, attr, i):
 		#return getattr(self, attr)
 	#	i += getattr(self, "_" + attr, 0)
@@ -27,6 +27,14 @@ class BaseEntity(object):
 
 	def __repr__(self):
 		return "%s" % (self.__class__.__name__)
+
+	def __int__(self):
+		"""Casting to an int will return the entity id"""
+		return self.entity_id
+
+	@property
+	def entities(self):
+		return [self]
 
 	@property
 	def is_card(self):

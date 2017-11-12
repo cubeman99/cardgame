@@ -22,6 +22,7 @@ class Manager(object):
 			raise AttributeError
 
 	def __iter__(self):
+		"""Iterate non-zero tags"""
 		for k in self.map:
 			if self.map[k]:
 				yield k
@@ -96,6 +97,7 @@ class GameManager(Manager):
 
 class PlayerManager(Manager):
 	map = {
+		GameTag.CARD_ID:		"id",
 		GameTag.CARD_TYPE:		"type",
 		GameTag.NAME:			"name",
 		GameTag.POWER:			"power",
@@ -112,13 +114,17 @@ class PlayerManager(Manager):
 
 class CardManager(Manager):
 	map = {
+		GameTag.CARD_ID:		"id",
 		GameTag.CARD_TYPE:		"type",
 		GameTag.NAME:			"name",
+		GameTag.TEXT:			None,
 
 		GameTag.POWER:			"power",
 		GameTag.HEALTH:			"max_health",
 		GameTag.MORALE:			"morale",
 		GameTag.SUPPLY:			"supply",
+		GameTag.DAMAGE:			"damage",
+		GameTag.OWNER:			"owner",
 
 		GameTag.FURY:			"fury",
 		GameTag.INSPIRE:		"inspire",
@@ -128,7 +134,9 @@ class CardManager(Manager):
 		GameTag.TERRITORY:		"territory",
 		GameTag.CONTROLLER:		"controller",
 		GameTag.ZONE:			"zone",
-		GameTag.TEXT:			None,
+
+		GameTag.DECLARED_ATTACK:	"declared_attack",
+		GameTag.DECLARED_INTERCEPT:	"declared_intercept",
 	}
 
 # Base class for all observers

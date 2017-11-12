@@ -7,7 +7,6 @@ class GameTag(IntEnum):
 	"GAME_TAG"
 
 	INVALID			= -1
-	ZONE			= 0
 	POWER			= 1
 	HEALTH			= 2
 	TRIBE			= 3
@@ -27,6 +26,14 @@ class GameTag(IntEnum):
 	NEXT_STEP		= 16
 
 	CARD_ID			= 17
+	ENTITY_ID		= 18
+	ZONE			= 19
+	DAMAGE			= 20
+	OWNER			= 21
+
+	DECLARED_ATTACK		= 22
+	DECLARED_INTERCEPT	= 23
+
 
 	# Keywords
 	MUDDLE		= 100
@@ -145,24 +152,81 @@ class Step(IntEnum):
 	RESPONSE		= 4 # Chooes units to intercept
 	COMBAT			= 5 # All combat resolves
 
-
+class OptionType(IntEnum):
+	INVALID				= 0
+	DONE				= 1
+	DECLARE				= 2 # Declare an attack/intercept
+	FLIP				= 3 # Flip/unflip a unit
+	PLAY				= 4 # Play a card
 
 
 class Type(IntEnum):
 	"TAG_TYPE"
 
-	UNKNOWN = 0
-	BOOL = 1
-	NUMBER = 2
-	COUNTER = 3
-	ENTITY = 4
-	PLAYER = 5
-	TEAM = 6
+	UNKNOWN		= 0
+	BOOL		= 1
+	NUMBER		= 2
+	COUNTER		= 3
+	ENTITY		= 4
+	PLAYER		= 5
+	TEAM		= 6
 	ENTITY_DEFINITION = 7
-	STRING = 8
+	STRING		= 8
 
 	# Not present at the time
 	LOCSTRING = -2
+
+
+
+
+TAG_TYPES = {
+	GameTag.CARD_ID: Type.STRING,
+	GameTag.NAME: Type.STRING,
+	GameTag.TEXT: Type.STRING,
+
+	GameTag.CARD_TYPE: CardType,
+	GameTag.ZONE: Zone,
+	GameTag.TRIBE: Tribe,
+	GameTag.STEP: Step,
+
+	GameTag.CONTROLLER: Type.PLAYER,
+
+	GameTag.DECLARED_ATTACK: Type.ENTITY,
+	GameTag.DECLARED_INTERCEPT: Type.ENTITY,
+}
+
+
+if __name__ == "__main__":
+	import sys
+
+	enums = {
+		k: dict(v.__members__) for k, v in globals().items() if (
+			isinstance(v, type) and issubclass(v, IntEnum) and k != "IntEnum"
+		)
+	}
+
+	def _print_enums(enums, format):
+		ret = []
+		linefmt = "\t%s = %i,"
+		for enum in sorted(enums):
+			sorted_pairs = sorted(enums[enum].items(), key=lambda k: k[1])
+			lines = "\n".join(linefmt % (name, value) for name, value in sorted_pairs)
+			ret.append(format % (enum, lines))
+		print("\n\n".join(ret))
+
+	#if len(sys.argv) >= 2:
+	#	format = sys.argv[1]
+	#else:
+	#	format = "--json"
+
+	#if format == "--ts":
+	#_print_enums(enums, "export const enum %s {\n%s\n}")
+
+	print(GameTag(GameTag.CONTROLLER).type)
+	#elif format == "--cs":
+	#_print_enums(enums, "public enum %s {\n%s\n}")
+	#else:
+	#print(json.dumps(enums, sort_keys=True))
 
 
 

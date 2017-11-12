@@ -1,13 +1,30 @@
-from enums import CardType, GameTag, Step, Zone
-
+from enums import CardType, GameTag, Step, Zone, Type
+import card_details
 
 PLAYABLE_CARD_TYPES = [
 	CardType.UNIT,
 	CardType.SPELL
 ]
 
+def tag_attribute(tag, default=0):
+	@property
+	def func(self):
+		return self.tags.get(tag, default)
+
+	return func
+
 class Entity:
 	_args = ()
+	#name = tag_attribute(GameTag.NAME)
+	#name = tag_attribute(GameTag.NAME, "")
+	text = tag_attribute(GameTag.TEXT)
+	power = tag_attribute(GameTag.POWER)
+	max_health = tag_attribute(GameTag.HEALTH)
+	damage = tag_attribute(GameTag.DAMAGE)
+	#max_health = tag_attribute(GameTag.MAX_HEALTH)
+	morale = tag_attribute(GameTag.MORALE)
+	supply = tag_attribute(GameTag.SUPPLY)
+	zone = tag_attribute(GameTag.ZONE, Zone.INVALID)
 
 	def __init__(self, id):
 		self.id = id
@@ -22,8 +39,39 @@ class Entity:
 		)
 
 	@property
+	def health(self):
+		return self.max_health - self.damage
+
+	@property
 	def controller(self):
-		return self.game.get_player(self.tags.get(GameTag.CONTROLLER, 0))
+		return self.game.find_entity_by_id(self.tags.get(GameTag.CONTROLLER, 0))
+
+	@property
+	def owner(self):
+		return self.game.find_entity_by_id(self.tags.get(GameTag.OWNER, 0))
+
+	@property
+	def buffs(self):
+		"""Return the buffs applied to this entity."""
+		for e in self.game.entities:
+			if e.type == CardType.EFFECT and e.owner == self and e.zone == self.zone:
+				yield e
+
+	def is_tag_buffed(self, tag):
+		return self.get_tag_buff_amount(tag) > 0
+
+	def is_tag_debuffed(self, tag):
+		return self.get_tag_buff_amount(tag) < 0
+
+	def get_tag_buff_amount(self, tag):
+		"""Returns the amount by which a tag is currently being adjusted due
+		to buffs."""
+		if GameTag(tag).type != Type.NUMBER:
+			return 0
+		value = 0
+		for buff in self.buffs:
+			value += buff.tags.get(tag, 0)
+		return value
 
 	@property
 	def initial_controller(self):
@@ -33,7 +81,7 @@ class Entity:
 
 	@property
 	def type(self):
-		return self.tags.get(GameTag.CARDTYPE, CardType.INVALID)
+		return self.tags.get(GameTag.CARD_TYPE, CardType.INVALID)
 
 	@property
 	def zone(self):
@@ -44,6 +92,11 @@ class Entity:
 			self._initial_controller = self.tags.get(GameTag.CONTROLLER, value)
 		self.tags[tag] = value
 
+class Option:
+	def __init__(self, type, args):
+		self.type = type
+		self.targets = args.get("Targets", [])
+		self.entity_id = args.get("ID", None)
 
 class Game(Entity):
 	_args = ("players", )
@@ -54,6 +107,7 @@ class Game(Entity):
 		self.players = []
 		self.entities = []
 		self.initial_entities = []
+		self.options = []
 		#self.initial_state = State.INVALID
 		self.initial_step = Step.INVALID
 
@@ -95,6 +149,12 @@ class Game(Entity):
 		self.initial_step = self.tags.get(GameTag.STEP, Step.INVALID)
 		self.register_entity(self)
 
+	def create_card(self, entity_id, card_id, tags):
+		card = Card(entity_id, card_id)
+		card.tags.update(tags)
+		self.register_entity(card)
+		return card
+
 	def register_entity(self, entity):
 		"""Register a single entity into the game"""
 		entity.game = self
@@ -109,10 +169,10 @@ class Game(Entity):
 		# int() for LazyPlayer mainly...
 		id = int(id)
 
-		if id <= len(self.entities):
-			entity = self.entities[id - 1]
-			if entity.id == id:
-				return entity
+		#if id <= len(self.entities):
+		#	entity = self.entities[id - 1]
+		#	if entity.id == id:
+		#		return entity
 
 		# Entities are ordered by ID... usually. It is NOT safe to assume
 		# that the entity is missing if we went past the ID. So this is the fallback.
@@ -125,6 +185,7 @@ class Player(Entity):
 	_args = ("name", )
 	UNKNOWN_HUMAN_PLAYER = "UNKNOWN HUMAN PLAYER"
 	can_be_in_deck = False
+	territory = tag_attribute(GameTag.TERRITORY)
 
 	def __init__(self, id, name=None):
 		super(Player, self).__init__(id)
@@ -165,9 +226,21 @@ class Player(Entity):
 			yield entity
 
 	@property
+	def hand(self):
+		for entity in self.entities:
+			if entity.zone == Zone.HAND:
+				yield entity
+
+	@property
+	def deck(self):
+		for entity in self.entities:
+			if entity.zone == Zone.DECK:
+				yield entity
+
+	@property
 	def field(self):
 		for entity in self.entities:
-			if entity.zone == Zone.PLAY:
+			if entity.zone == Zone.PLAY and entity.type == CardType.UNIT:
 				yield entity
 
 	@property
@@ -208,32 +281,23 @@ class Player(Entity):
 
 class Card(Entity):
 	_args = ("card_id", )
+	name = tag_attribute(GameTag.NAME)
 
 	def __init__(self, id, card_id):
 		super(Card, self).__init__(id)
 		self.initial_card_id = card_id
 		self.card_id = card_id
 		self.revealed = False
+		self.data = card_details.find(card_id)
+		self.tags = {}
+		self.tags.update(self.data.tags)
 
 	@property
-	def power(self):
-		return self.tags.get(GameTag.POWER, 0)
-
-	@property
-	def health(self):
-		return self.tags.get(GameTag.HEALTH, 0)
-
-	@property
-	def max_health(self):
-		return self.tags.get(GameTag.MAX_HEALTH, 0)
-
-	@property
-	def morale(self):
-		return self.tags.get(GameTag.MORALE, 0)
-
-	@property
-	def supply(self):
-		return self.tags.get(GameTag.SUPPLY, 0)
+	def options(self):
+		"""Return a list of options this entity has."""
+		for option in self.game.options:
+			if option.entity_id == self.id:
+				yield option
 
 	@property
 	def can_be_in_deck(self):
