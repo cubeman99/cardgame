@@ -9,6 +9,7 @@ import card_details
 import traceback
 import json
 import argparse
+import os
 
 
 class ReceiveThread(threading.Thread):
@@ -66,13 +67,14 @@ class ReceiveThread(threading.Thread):
 
 class Client:
 
-	def __init__(self):
+	def __init__(self, name):
 		self.game = Game(0)
 		self.game.create({})
 		self.receive_thread = None
 		self.exit = False
 		self.serializer = json.JSONEncoder()
 		self.player_id = None
+		self.name = name
 
 	@property
 	def player(self):
@@ -90,7 +92,7 @@ class Client:
 
 	def connect(self, host, port):
 		"""Connect to the server"""
-		print("Attempting connection to %s:%d" %(host, port))
+		print("Attempting connection to %s:%d as %s" %(host, port, name))
 		try:
 			self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.socket.connect((host, port))
@@ -184,8 +186,8 @@ class Client:
 		# Usage: intercept INTERCEPTOR DEFENDER
 		elif action == "intercept":
 			return {
-				"Type": "intercept",
-				"intercept": {
+				"Type": "Intercept",
+				"Intercept": {
 					"Interceptor": int(args[0]),
 					"Defender": int(args[1]),
 				}
@@ -230,6 +232,16 @@ class Client:
 			self.print_game_state()
 			return None
 
+		# View current options
+		# Usage: options
+		elif action == "options":
+			i = 1
+			print("Available options:")
+			for option in self.game.options:
+				print(" %2d. %s" %(i, option))
+				i += 1
+			return None
+
 		# Print out info about an entity
 		# Usage: info ENTITY
 		elif action == "info":
@@ -258,6 +270,12 @@ class Client:
 							GameTag.CONTROLLER, GameTag.ZONE, GameTag.NAME):
 							color_print("%s=%r, " %(tag.name, value))
 					color_print("\n")
+			return None
+
+		# Show help information
+		# Usage: help
+		elif action == "help":
+			color_print("{yellow}TODO{}: help is unimplemented\n")
 			return None
 
 		# Exit the game
@@ -290,9 +308,15 @@ class Client:
 			type = thing["Type"]
 			data = thing[type]
 
-			if type == "Welcome":
+			if type == "AcceptConnection":
 				self.player_id = data["PlayerID"]
 				print("I joined as player ID %d" %(self.player_id))
+				self.send({
+					"Type": "JoinGame",
+					"JoinGame": {
+						"Name": self.name,
+					}
+				})
 
 			if type == "FullEntity":
 				card_id = data["CardID"]
@@ -303,19 +327,21 @@ class Client:
 					tags[int(key)] = value
 				entity = None
 				if tags[GameTag.CARD_TYPE] == CardType.PLAYER:
-					entity = Player(entity_id, "Player")
+					entity = Player(entity_id)
 					data = card_details.find(card_id)
 					entity.tags.update(data.tags)
 					entity.tags.update(tags)
 					self.game.register_entity(entity)
-					print("Creating player")
 				else:
 					entity = self.game.create_card(entity_id, card_id, tags)
 
 			elif type == "TagChange":
 				entity_id = data["EntityID"]
 				tag = GameTag(int(data["Tag"]))
-				value = int(data["Value"])
+				if tag.type == Type.STRING:
+					value = data["Value"]
+				else:
+					value = int(data["Value"])
 				entity = self.game.find_entity_by_id(entity_id)
 				if entity:
 					entity.tags[tag] = value
@@ -326,7 +352,6 @@ class Client:
 				for option in options:
 					option_type = OptionType(option["Type"])
 					option_args = option.get("MainOption", {})
-					print("Option %s: %s" %(option_type.name, option_args))
 					self.game.options.append(Option(
 						type=option_type,
 						args=option_args))
@@ -344,21 +369,21 @@ class Client:
 		opponent = self.opponent
 
 		print("")
-		self.print_player_info(opponent, "Opponent")
+		self.print_player_info(opponent, opponent.name)
 		print("")
-		self.print_card_list([e for e in player.hand], "Opponent's hand:")
+		self.print_card_list(list(opponent.hand), "Opponent's hand:")
 		print("")
-		self.print_card_list([e for e in player.field], "Opponent's field:")
-		self.print_card_list([e for e in opponent.field], "Your field:")
+		self.print_card_list(list(opponent.field), "Opponent's field:")
+		self.print_card_list(list(player.field), "Your field:")
 		print("")
-		self.print_card_list([e for e in opponent.hand], "Your hand:")
+		self.print_card_list(list(player.hand), "Your hand:")
 		print("")
-		self.print_player_info(player, "You")
+		self.print_player_info(player, player.name)
 		print("")
 
 	def print_player_info(self, player, name):
 		deck_size = len([card for card in player.deck])
-		color_print("{yellow}%s:{} %d. Morale: %d, Supply: %d, Territory: %d, Deck: %d cards\n" %(
+		color_print("{yellow}%s(%d):{} Morale: %d, Supply: %d, Territory: %d, Deck: %d cards\n" %(
 			name,
 			player.id,
 			player.morale,
@@ -437,6 +462,7 @@ class Client:
 if __name__=="__main__":
 	DEFAULT_HOST = "localhost"
 	DEFAULT_PORT = 50007
+	DEFAULT_NAME = os.getlogin()
 
 	# Parse the command line arguments
 	parser = argparse.ArgumentParser(description='Run the cardgame client.')
@@ -454,8 +480,10 @@ if __name__=="__main__":
 	if len(split_host) >= 2:
 		port = int(split_host[1])
 
+	name = DEFAULT_NAME
+
 	# Initialize the Client
-	client = Client()
+	client = Client(name=name)
 
 	# Connect to the server and run the client.
 	if client.connect(host=host, port=port):

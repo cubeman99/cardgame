@@ -94,3 +94,10 @@ class CardList(list):
 
 	def filter(self, **kwargs):
 		return self.__class__(e for k, v in kwargs.items() for e in self if getattr(e, k, 0) == v)
+
+
+
+if __name__=="__main__":
+	import os
+	print(os.getlogin())
+

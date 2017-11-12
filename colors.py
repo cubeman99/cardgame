@@ -33,7 +33,11 @@ class Colors:
 
 	RED				= "\033[31m"
 	GREEN			= "\033[32m"
-	YELLOW			= "\033[38;5;226m"
+	PURPLE			= "\033[38;5;5m"
+	YELLOW			= "\033[38;5;11m"
+	MAGENTA			= "\033[38;5;13m"
+	CYAN			= "\033[38;5;14m"
+	WHITE			= "\033[38;5;15m"
 
 	DEFAULT			= "\033[0m"
 	BUFFED_STAT		= "\033[32m"
@@ -132,8 +136,12 @@ if not supports_color():
 	Colors.BUFFED_STAT		= Colors.GREEN
 	Colors.DAMAGED_HEALTH	= Colors.RED
 	Colors.CARD_NAME		= Colors.TEAL
+	Colors.CARD_NAME_UNIT	= Colors.TEAL
+	Colors.CARD_NAME_SPELL	= Colors.PURPLE
 	Colors.CARD_TEXT		= Colors.DARK_GRAY
 	Colors.EXCEPTION		= Colors.YELLOW
+	Colors.PLAYABLE			= Colors.GREEN
+	Colors.ACTIVATED		= Colors.YELLOW
 
 
 	stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)

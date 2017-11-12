@@ -116,14 +116,14 @@ class BaseCard(Entity):
 	# Check if the card is playable
 	def is_playable(self):
 		"""Check if this card is playable based on the current game state"""
-		if not self.controller.current_player:
-			return False
-		if self.zone != Zone.HAND:
-			return False
-		if not self.controller.can_pay_cost(self):
-			return False
-		# TODO: other requirements
-		return True
+
+		# TODO: other requirements (targeting)
+		# TODO: battle cards
+		return self.game.step == Step.PLAY and \
+			self.game.current_player == self.controller and \
+			self.game.choosing_player == self.controller and \
+			self.zone == Zone.HAND and \
+			self.controller.can_pay_cost(self)
 
 	# Check if the card is activated by some condition
 	def is_activated(self):
@@ -246,32 +246,55 @@ class LiveEntity(BaseCard):
 # Unit
 #------------------------------------------------------------------------------
 class Unit(LiveEntity):
-	inspire			= int_property("inspire")
-	spy				= int_property("spy")
-	inform			= int_property("inform")
-	declared_attack		= None
-	declared_intercept	= None
+	inspire		= int_property("inspire")
+	spy			= int_property("spy")
+	inform		= int_property("inform")
 
 	def __init__(self, data):
 		super().__init__(data)
+		self.declared_attack = None
+		self.declared_intercept = None
+		self.flipped = False
 
 	@property
 	def attack_targets(self):
+		"""Return the valid targets this unit can attack."""
 		return self.controller.opponent.field
 
 	@property
 	def intercept_targets(self):
-		return []
+		"""Return the valid targets this unit can intercept."""
+		for unit in self.controller.opponent.field:
+			if unit.declared_attack != None and unit.declared_attack != self:
+				yield unit
 
 	@property
 	def health(self):
+		"""Return the this unit's current health."""
 		return self.max_health - self.damage
 
 	def can_attack(self):
-		return self.power > 0 and self.game.current_player == self.controller
+		"""Return whether this unit is currently able to declare an attack."""
+		# Flipped units cannot attack
+		if self.flipped:
+			return False
+		return self.power > 0 and \
+			self.game.step == Step.DECLARE and \
+			self.game.current_player == self.controller and \
+			self.game.choosing_player == self.controller
 
 	def can_intercept(self):
-		return self.game.current_player == self.controller
+		"""Return whether this unit is currently able to declare an intercept."""
+		# First check if this unit is being attacked.
+		for unit in self.controller.opponent.field:
+			if unit.declared_attack == self:
+				return False
+		# Flipped units cannot intercept
+		if self.flipped:
+			return False
+		return self.game.step == Step.RESPONSE and \
+			self.game.current_player == self.controller.opponent and \
+			self.game.choosing_player == self.controller
 
 	def _set_zone(self, value):
 		# Only units can go into a player's field.
@@ -294,6 +317,12 @@ class Unit(LiveEntity):
 	def update_scripts(self):
 		yield from super().update_scripts
 		#if (self.heroic)
+
+	def flip(self):
+		self.flipped = True
+
+	def unflip(self):
+		self.flipped = False
 
 
 #------------------------------------------------------------------------------

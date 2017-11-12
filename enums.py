@@ -148,9 +148,10 @@ class Step(IntEnum):
 	INVALID			= 0
 	UNFLIP			= 1 # All flipped units are now unflipped
 	RESOURCE		= 2 # Choose to gain either 1 morale or 1 supply
-	DECLARE			= 3 # Commit allied units to attacking enemy units
-	RESPONSE		= 4 # Chooes units to intercept
+	DECLARE			= 3 # Commit allied units to attacking enemy units, play battle cards
+	RESPONSE		= 4 # Choose units to intercept, play battle cards
 	COMBAT			= 5 # All combat resolves
+	PLAY			= 6 # Play spells and units from your hand
 
 class OptionType(IntEnum):
 	INVALID				= 0

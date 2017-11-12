@@ -13,7 +13,6 @@ import cards
 
 
 
-
 class Game(Entity):
 	Manager = GameManager
 
@@ -34,13 +33,11 @@ class Game(Entity):
 		self.turn_counter = 0
 		self.play_counter = 0
 		self.tick = 0
-		#self.state = State.INVALID
-		self.step = Step.UNFLIP
 		self.active_aura_buffs = CardList()
 
 		self.players = players
-		self.player1 = players[0]
-		self.player2 = players[1]
+		self.player1 = self.players[0]
+		self.player2 = self.players[1]
 		self.player1.name = "Player1"
 		self.player2.name = "Player2"
 		self.player1.opponent = self.player2
@@ -53,7 +50,10 @@ class Game(Entity):
 			self.manager.new_entity(player)
 
 		self.current_player = players[0] # Player whose turn it is.
-		self.choosing_player = players[0] # Player who is currently choosing an actionvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+		self.step_player = players[0] # Player who controls the current step
+		self.choosing_player = players[0] # Player who is currently choosing an action
+		self.step = Step.PLAY
+		#self.state = State.INVALID
 
 	def __str__(self):
 		return "Game"
@@ -240,5 +240,86 @@ class Game(Entity):
 
 	def end_turn(self):
 		return self.queue_actions(self, [EndTurn(self.current_player)])
+
+	def end_step(self):
+		if self.step == Step.DECLARE:
+			self.step = Step.RESPONSE
+			self.choosing_player = self.current_player.opponent
+			self.step_player = self.current_player.opponent
+			print("Entering response step for %s" %(self.current_player.opponent))
+
+		elif self.step == Step.RESPONSE:
+			self.step = Step.COMBAT
+			self.choosing_player = None
+			self.step_player = None
+			print("Entering combat step for %s" %(self.current_player))
+
+		# Combat step happens automatically
+		if self.step == Step.COMBAT:
+			self.resolve_combat()
+
+			self.step = Step.PLAY
+			self.choosing_player = self.current_player
+			self.step_player = self.current_player
+			print("Entering play step for %s" %(self.current_player))
+
+		elif self.step == Step.PLAY:
+			self.step = Step.UNFLIP
+			self.current_player = self.current_player.opponent
+			self.choosing_player = None
+			self.step_player = None
+			self.turn += 1
+			print("Entering unflip step for %s" %(self.current_player))
+
+		# Unflip step happens automatically
+		if self.step == Step.UNFLIP:
+			self.unflip_units(self.game.current_player)
+
+			self.step = Step.RESOURCE
+			self.choosing_player = self.current_player
+			self.step_player = self.current_player
+			print("Entering resource step for %s" %(self.current_player))
+			self.step_player.morale += 1
+			self.step_player.supply += 1
+
+		# TODO: Make resource step not automatic
+		if self.step == Step.RESOURCE:
+			self.step = Step.DECLARE
+			self.choosing_player = self.current_player
+			self.step_player = self.current_player
+			print("Entering declare step for %s" %(self.current_player))
+
+	def unflip_units(self, player):
+		for unit in player.field:
+			if unit.flipped:
+				unit.unflip()
+
+	def resolve_combat(self):
+		print("Resolving all combat")
+		attacks = []
+
+		# Gather a list of attacker/defender pairs
+		for attacker in self.current_player.field:
+			if attacker.declared_attack != None:
+				defender = attacker.declared_attack
+
+				# Check for interceptor
+				for interceptor in self.current_player.opponent.field:
+					if interceptor.declared_intercept == attacker:
+						defender = interceptor
+						break
+
+				attacks.append((attacker, defender))
+
+		# Clear declared attacks/intercepts.
+		for unit in self.board:
+			unit.declared_attack = None
+			unit.declared_intercept = None
+
+		# Resolve attacks.
+		for attacker, defender in attacks:
+			self.game.action_block(self.current_player,
+				Attack(attacker, defender), type=BlockType.ATTACK)
+
 
 

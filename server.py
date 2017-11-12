@@ -28,8 +28,9 @@ class GameSerializer(json.JSONEncoder):
 
 
 class ServerManager:
-	def __init__(self, game):
+	def __init__(self, game, player):
 		self.game = game
+		self.player = player
 		self.game_state = {}
 		self.queued_data = []
 
@@ -40,19 +41,22 @@ class ServerManager:
 			# Value is default to card data.
 			if not value:
 				continue
-			if isinstance(value, str):
-				continue
-			state[tag] = int(value)
+			#if isinstance(value, str):
+			#	continue
+			state[tag] = value
 
 	def refresh_options(self):
 		print("Refreshing options...")
+		self.options = []
+
 		#if self.game.current_player.choice:
 		#	return self.refresh_choices()
-		self.options = [{"Type": OptionType.DONE}]
 
-		for entity in self.game.current_player.actionable_entities:
-			for option in self.get_options(entity):
-				self.options.append(option)
+		if self.game.choosing_player == self.player:
+			self.options.append({"Type": OptionType.DONE})
+			for entity in self.game.choosing_player.actionable_entities:
+				for option in self.get_options(entity):
+					self.options.append(option)
 
 		payload = {
 			"Type": "Options",
@@ -97,21 +101,20 @@ class ServerManager:
 		value = entity.tags.get(tag, 0)
 		#if tag == GameTag.DAMAGE:
 		#	print("TAG power: %r = %r" %(tag, value))
-		if isinstance(value, str):
-			return
-		if isinstance(value, Player):
-			value = value.entity_id
-		if isinstance(value, BaseEntity):
-			value = value.entity_id
+		#if isinstance(value, str):
+		#	return
 		if value == None:
 			value = 0
 		if not value:
 			if state.get(tag, 0):
 				self.tag_change(entity, tag, 0)
 				del state[tag]
-		elif int(value) != state.get(tag, 0):
-			self.tag_change(entity, tag, int(value))
-			state[tag] = int(value)
+		#elif int(value) != state.get(tag, 0):
+		#	self.tag_change(entity, tag, int(value))
+		#	state[tag] = int(value)
+		elif value != state.get(tag, 0):
+			self.tag_change(entity, tag, value)
+			state[tag] = value
 
 	def refresh_full_state(self):
 		#if self.game.step < Step.BEGIN_MULLIGAN:
@@ -153,14 +156,14 @@ class ServerManager:
 						"Type": OptionType.PLAY,
 						"MainOption": {
 							"ID": entity,
-							"Targets": entity.targets,
+							"Targets": list(entity.targets),
 						},
 					}
 
 		elif entity.zone == Zone.PLAY:
 			if entity.type in [CardType.UNIT]:
 				if entity.can_attack():
-					targets = entity.attack_targets
+					targets = list(entity.attack_targets)
 					if len(targets) > 0:
 						yield {
 							"Type": OptionType.DECLARE,
@@ -170,7 +173,7 @@ class ServerManager:
 							}
 						}
 				elif entity.can_intercept():
-					targets = entity.intercept_targets
+					targets = list(entity.intercept_targets)
 					if len(targets) > 0:
 						yield {
 							"Type": OptionType.DECLARE,
@@ -198,7 +201,7 @@ class ClientThread(Thread):
 		self.connection = connection
 		self.ip = ip
 		self.port = port
-		self.manager = ServerManager(self.server.game)
+		self.manager = ServerManager(self.server.game, self.player)
 		self.serializer = GameSerializer()
 		self.decoder = json.JSONDecoder()
 
@@ -263,11 +266,6 @@ class ClientThread(Thread):
 		self.connection.send(data)
 
 
-
-HOST = ''
-PORT = 50007
-
-
 test_deck = [
 	# Aard
 	(1, "PackExile"),
@@ -301,6 +299,7 @@ test_deck = [
 
 test_deck = []
 
+
 class Server:
 
 	def __init__(self):
@@ -326,9 +325,9 @@ class Server:
 		self.game.player1.give("RipperPack")
 		self.game.player1.give("BonehoarderBrute")
 		self.game.player1.give("WarpackChieftan")
-		self.game.player1.give("RageheartThug")
+		"""self.game.player1.give("RageheartThug")
 		self.game.player1.give("OctopiExile")
-		"""self.game.player1.give("TestCard")
+		self.game.player1.give("TestCard")
 		self.game.player1.give("InfestedWhale")
 		self.game.player1.give("EchoingFiend")
 		self.game.player1.give("ServantOfElagalth")
@@ -337,9 +336,9 @@ class Server:
 		self.game.player1.give("NecrolightPriestess")
 		self.game.player1.give("NoxiousTentacle")
 		self.game.player1.give("ElegalthsChosen")
-		self.game.player1.give("AbyssalSummoning")
+		self.game.player1.give("AbyssalSummoning")"""
 		self.game.player1.give("PotentAfterlife")
-		self.game.player1.give("ExtremePressure")"""
+		self.game.player1.give("ExtremePressure")
 
 
 		for i in range(0, 40):
@@ -360,11 +359,12 @@ class Server:
 		print("Deck size = %d" %(deck_size))
 
 
-	def bind(self):
+	def bind(self, port, host=""):
 		"""Bind the server to an address"""
+		print("Binding server to port %d" %(port))
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.socket.bind((HOST, PORT))
+		self.socket.bind((host, port))
 
 	def run(self):
 		"""Run the server"""
@@ -389,21 +389,24 @@ class Server:
 			if not thread_player:
 				print("Error: a client tried to connect but game is full")
 				data = Message(ServerMessage.GAME_FULL).pack()
-				conn.send_data(data)
+				thread.manager.queued_data += [{
+					"Type": "RefuseConnection",
+					"RefuseConnection": {
+						"Reason": "GameFull",
+					}
+				}]
+				thread.send_queued_data()
 				conn.close()
 			else:
 				print("%s has connected!" %(thread_player))
 				thread = ClientThread(self, thread_player, conn, ip, port)
 				thread_player.connection = thread
 				thread.start()
-				#thread.send_message(Message(ServerMessage.GAME_FULL))
 				self.connections.append(thread)
 
-				# Send the initial game state packet to the new connection.
-
 				thread.manager.queued_data += [{
-					"Type": "Welcome",
-					"Welcome": {
+					"Type": "AcceptConnection",
+					"AcceptConnection": {
 						"PlayerID": thread.player.entity_id,
 					}
 				}]
@@ -435,9 +438,6 @@ class Server:
 	def receive_data(self, player, message):
 		"""Decode a packet of bytes received from the given player"""
 		print("Received message from %s: %s" %(player, message))
-		#message = Message()
-		#message.unpack(data)
-		#self.decode_message(player, message)
 
 		type = message["Type"]
 		data = message.get(type, None)
@@ -450,6 +450,14 @@ class Server:
 
 		if type == "Concede":
 			print("%s concedes!" %(player))
+
+		if type == "Done":
+			self.game.end_step()
+
+		elif type == "JoinGame":
+			data = message.get("JoinGame")
+			name = data["Name"]
+			player.name = name
 
 		elif type == "Play":
 			data = message.get("Play")
@@ -468,26 +476,41 @@ class Server:
 			attacker = self.game.find_entity(data["Attacker"])
 			defender = self.game.find_entity(data["Defender"])
 			if not attacker:
-				print("Card ID '%s' does not exist" %(message.args[0]))
+				print("Card ID '%s' does not exist" %(data["Attacker"]))
 				return CommandResponse.INVALID
 				return False
 			if not defender:
-				print("Card ID '%s' does not exist" %(message.args[1]))
+				print("Card ID '%s' does not exist" %(data["Defender"]))
 				return CommandResponse.INVALID
 				return False
 			attacker.declared_attack = defender
 			print("%s declared attack: %r -> %r" %(player, attacker, defender))
+
+		elif type == "Intercept":
+			data = message.get("Intercept")
+			interceptor = self.game.find_entity(data["Interceptor"])
+			defender = self.game.find_entity(data["Defender"])
+			if not interceptor:
+				print("Card ID '%s' does not exist" %(data["Interceptor"]))
+				return CommandResponse.INVALID
+				return False
+			if not defender:
+				print("Card ID '%s' does not exist" %(data["Defender"]))
+				return CommandResponse.INVALID
+				return False
+			interceptor.declared_intercept = defender
+			print("%s declared intercept: %r -> %r" %(player, interceptor, defender))
 
 		elif type == "DebugAttack":
 			data = message.get("DebugAttack")
 			attacker = self.game.find_entity(data["Attacker"])
 			defender = self.game.find_entity(data["Defender"])
 			if not attacker:
-				print("Card ID '%s' does not exist" %(message.args[0]))
+				print("Card ID '%s' does not exist" %(data["Attacker"]))
 				return CommandResponse.INVALID
 				return False
 			if not defender:
-				print("Card ID '%s' does not exist" %(message.args[1]))
+				print("Card ID '%s' does not exist" %(data["Defender"]))
 				return CommandResponse.INVALID
 				return False
 			self.game.action_block(player,
@@ -512,75 +535,10 @@ class Server:
 			return True
 
 
-	def decode_message(self, player, message):
-		"""Decode a message received from the given player"""
-
-		# Print out the message
-		color_print("Received from %s: {yellow}%s{}\n" %(player, message))
-
-		if message.type == ClientMessage.PLAY:
-			card = self.game.find_entity(message.args[0])
-			if not card:
-				print("Card ID '%s' does not exist" %(message.args[0]))
-				return False
-			targets = message.args[1:]
-
-			if len(targets) == 0:
-				print("Playing %s" %(card.name))
-			else:
-				color_print("Playing {card_name}%s{} targeting [" %(card.name))
-				first = True
-				for target in targets:
-					if not first:
-						color_print(", ")
-					color_print("{card_name}%s{}" %(target.name))
-					first = False
-				print("]")
-
-			if len(targets) > 0:
-				card.play(target=targets[0])
-			else:
-				card.play()
-			return True
-
-		elif message.type == ClientMessage.DECLARE_ATTACK:
-			attacker = self.game.find_entity(message.args[0])
-			defender = self.game.find_entity(message.args[1])
-			if not attacker:
-				print("Card ID '%s' does not exist" %(message.args[0]))
-				return CommandResponse.INVALID
-				return False
-			if not defender:
-				print("Card ID '%s' does not exist" %(message.args[1]))
-				return CommandResponse.INVALID
-				return False
-
-			self.game.action_block(player,
-				actions.Attack(attacker, defender), type=BlockType.ATTACK)
-			return True
-
-		elif message.type == ClientMessage.PLAY:
-			return False
-
-		elif message.type == ClientMessage.DONE:
-			if self.game.current_player == player:
-				self.game.begin_turn(self.game.non_current_player)
-			else:
-				print("It is not your turn!")
-				return False
-			return True
-
-		else:
-			print("Unknown action")
-			return False
-
-		return False
-
-
-
 if __name__=="__main__":
+	DEFAULT_PORT = 50007
 	server = Server()
 	server.prepare_game()
-	server.bind()
+	server.bind(port=DEFAULT_PORT)
 	server.run()
 

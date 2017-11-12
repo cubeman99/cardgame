@@ -1,4 +1,4 @@
-from enums import CardType, GameTag, Step, Zone, Type
+from enums import CardType, GameTag, Step, Zone, Type, OptionType
 import card_details
 
 PLAYABLE_CARD_TYPES = [
@@ -25,6 +25,7 @@ class Entity:
 	morale = tag_attribute(GameTag.MORALE)
 	supply = tag_attribute(GameTag.SUPPLY)
 	zone = tag_attribute(GameTag.ZONE, Zone.INVALID)
+	name = tag_attribute(GameTag.NAME)
 
 	def __init__(self, id):
 		self.id = id
@@ -94,9 +95,34 @@ class Entity:
 
 class Option:
 	def __init__(self, type, args):
-		self.type = type
+		self.type = OptionType(type)
 		self.targets = args.get("Targets", [])
 		self.entity_id = args.get("ID", None)
+
+	def __str__(self):
+		# Type
+		text = "%s" %(self.type.name.lower())
+		# Make first letter uppercase.
+		text = text[0].upper() + text[1:]
+		# Entity
+		if self.entity_id != None:
+			text += " entity %d" %(self.entity_id)
+		# Targets
+		if len(self.targets) > 0:
+			if len(self.targets) > 1 or self.targets[0] != None:
+				text += " targeting"
+				i = 0
+				for target in self.targets:
+					if i > 0:
+						text += ","
+					if i > 0 and i == len(self.targets) - 1:
+						text += " or"
+					if target != None:
+						text += " %s" %(target)
+					else:
+						text += " (no target)"
+					i += 1
+		return text
 
 class Game(Entity):
 	_args = ("players", )
@@ -187,12 +213,13 @@ class Player(Entity):
 	can_be_in_deck = False
 	territory = tag_attribute(GameTag.TERRITORY)
 
-	def __init__(self, id, name=None):
+	def __init__(self, id):
 		super(Player, self).__init__(id)
 		#self.player_id = player_id
 		#self.account_hi = hi
 		#self.account_lo = lo
-		self.name = name
+		#self.name = name
+		self.card_id = ""
 
 	def __str__(self):
 		return self.name or ""
@@ -281,7 +308,6 @@ class Player(Entity):
 
 class Card(Entity):
 	_args = ("card_id", )
-	name = tag_attribute(GameTag.NAME)
 
 	def __init__(self, id, card_id):
 		super(Card, self).__init__(id)
