@@ -4,6 +4,7 @@ from utils import CardList
 from entity import Entity, int_property
 from enums import *
 from manager import PlayerManager
+from logic.actions import *
 import random
 
 
@@ -82,6 +83,9 @@ class Player(LiveEntity):
 			card.parent_card = parent
 		self.game.manager.new_entity(card)
 		return card
+
+	def draw(self, count=1):
+		self.game.queue_actions(self, [Draw(self) * count])
 
 	def prepare_for_game(self):
 		#self.summon(self.starting_hero)

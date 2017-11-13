@@ -279,7 +279,7 @@ test_deck = [
 	(1, "RipperPack"),
 	(1, "RageheartScreamer"),
 	(1, "WarpackHowler"),
-	(1, "RaidpackRally"),
+	#(1, "RaidpackRally"),
 	(1, "Overrun"),
 
 	# Octopi
@@ -291,13 +291,11 @@ test_deck = [
 	(1, "AgileSquirmer"),
 	(1, "NecrolightPriestess"),
 	(1, "NoxiousTentacle"),
-	(1, "ElegalthsChosen"),
-	(1, "AbyssalSummoning"),
-	(1, "PotentAfterlife"),
-	(1, "ExtremePressure"),
+	#(1, "ElegalthsChosen"),
+	#(1, "AbyssalSummoning"),
+	#(1, "PotentAfterlife"),
+	#(1, "ExtremePressure"),
 ]
-
-test_deck = []
 
 
 class Server:
@@ -314,17 +312,25 @@ class Server:
 		#self.game = Game(players=[player1, player2])
 		self.done = False
 
-		self.game.player2.give("TestCard")
+		#self.game.player2.give("TestCard")
 		self.game.player2.give("OctopiExile")
 		self.game.player2.give("InfestedWhale")
-		self.game.player2.give("EchoingFiend")
+		#self.game.player2.give("EchoingFiend")
+		self.game.player2.give("ServantOfElagalth")
 		self.game.player2.give("UnstableLurker")
 		self.game.player2.give("NoxiousTentacle")
+		#self.game.player2.give("ElegalthsChosen")
+		self.game.player2.give("Overrun")
 
 		self.game.player1.give("WarlordHeir")
 		self.game.player1.give("RipperPack")
 		self.game.player1.give("BonehoarderBrute")
 		self.game.player1.give("WarpackChieftan")
+		#self.game.player1.give("PotentAfterlife")
+		#self.game.player1.give("ExtremePressure")
+		self.game.player1.give("RageheartThug")
+		self.game.player1.give("AgileSquirmer")
+
 		"""self.game.player1.give("RageheartThug")
 		self.game.player1.give("OctopiExile")
 		self.game.player1.give("TestCard")
@@ -337,18 +343,20 @@ class Server:
 		self.game.player1.give("NoxiousTentacle")
 		self.game.player1.give("ElegalthsChosen")
 		self.game.player1.give("AbyssalSummoning")"""
-		self.game.player1.give("PotentAfterlife")
-		self.game.player1.give("ExtremePressure")
 
+
+		#for i in range(0, 40):
+		#	self.game.player1.card("OctopiExile", zone=Zone.DECK)
+		#	self.game.player2.card("OctopiExile", zone=Zone.DECK)
 
 		for i in range(0, 40):
-			self.game.player1.card("OctopiExile", zone=Zone.DECK)
-			self.game.player2.card("OctopiExile", zone=Zone.DECK)
+			self.game.player1.card(random.choice(test_deck)[1], zone=Zone.DECK)
+			self.game.player2.card(random.choice(test_deck)[1], zone=Zone.DECK)
 
-		for item in test_deck:
-			for i in range(0, item[0]):
-				self.game.player1.card(item[1], zone=Zone.DECK)
-				self.game.player2.card(item[1], zone=Zone.DECK)
+		#for count, card_id in test_deck:
+		#	for i in range(0, count):
+		#		self.game.player1.card(card_id, zone=Zone.DECK)
+		#		self.game.player2.card(card_id, zone=Zone.DECK)
 
 		self.game.player1.shuffle_deck()
 		self.game.player2.shuffle_deck()
@@ -515,6 +523,11 @@ class Server:
 				return False
 			self.game.action_block(player,
 				actions.Attack(attacker, defender), type=BlockType.ATTACK)
+
+		elif type == "DebugDraw":
+			data = message.get("DebugDraw")
+			count = data["Count"]
+			player.draw(count)
 
 		elif type == "DebugRestart":
 			print("DEBUG: Restarting the game.")

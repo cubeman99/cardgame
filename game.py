@@ -289,6 +289,7 @@ class Game(Entity):
 			print("Entering resource step for %s" %(self.current_player))
 			self.step_player.morale += 1
 			self.step_player.supply += 1
+			self.step_player.draw(1)
 
 		# TODO: Make resource step not automatic
 		if self.step == Step.RESOURCE:

@@ -218,6 +218,18 @@ class Client:
 				}
 			}
 
+		# DEBUG: draw a card
+		elif action == "draw":
+			count = 1
+			if len(args) >= 1:
+				count = int(args[0])
+			return {
+				"Type": "DebugDraw",
+				"DebugDraw": {
+					"Count": count,
+				}
+			}
+
 		# DEBUG: Restart the game
 		elif action == "restart":
 			return { "Type": "DebugRestart" }
