@@ -55,6 +55,14 @@ class Game(Entity):
 		self.step = Step.PLAY
 		#self.state = State.INVALID
 
+	@property
+	def id(self):
+		return self.entity_id
+
+	@property
+	def name(self):
+		return "Game"
+
 	def __str__(self):
 		return "Game"
 
@@ -93,8 +101,8 @@ class Game(Entity):
 
 	@property
 	def entities(self):
-		return CardList(chain(self.players[0].entities, self.players[1].entities))
-		#return CardList(chain([self], self.players[0].entities, self.players[1].entities))
+		#return CardList(chain(self.players[0].entities, self.players[1].entities))
+		return CardList(chain([self], self.players[0].entities, self.players[1].entities))
 
 	@property
 	def live_entities(self):

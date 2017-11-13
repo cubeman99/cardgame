@@ -68,7 +68,7 @@ class ReceiveThread(threading.Thread):
 class Client:
 
 	def __init__(self, name):
-		self.game = Game(0)
+		self.game = Game()
 		self.game.create({})
 		self.receive_thread = None
 		self.exit = False
@@ -326,7 +326,10 @@ class Client:
 					tag = GameTag(int(key))
 					tags[int(key)] = value
 				entity = None
-				if tags[GameTag.CARD_TYPE] == CardType.PLAYER:
+				if tags[GameTag.CARD_TYPE] == CardType.GAME:
+					entity = self.game
+					entity.tags.update(tags)
+				elif tags[GameTag.CARD_TYPE] == CardType.PLAYER:
 					entity = Player(entity_id)
 					data = card_details.find(card_id)
 					entity.tags.update(data.tags)
@@ -380,11 +383,13 @@ class Client:
 		print("")
 		self.print_player_info(player, player.name)
 		print("")
+		print("Turn %d: %s step for %s" %(self.game.turn_number,
+			Step(self.game.step).name, self.game.step_player))
 
 	def print_player_info(self, player, name):
 		deck_size = len([card for card in player.deck])
 		color_print("{yellow}%s(%d):{} Morale: %d, Supply: %d, Territory: %d, Deck: %d cards\n" %(
-			name,
+				name,
 			player.id,
 			player.morale,
 			player.supply,
@@ -461,7 +466,7 @@ class Client:
 
 if __name__=="__main__":
 	DEFAULT_HOST = "localhost"
-	DEFAULT_PORT = 50007
+	DEFAULT_PORT = 32764
 	DEFAULT_NAME = os.getlogin()
 
 	# Parse the command line arguments

@@ -10,7 +10,12 @@ def tag_attribute(tag, default=0):
 	@property
 	def func(self):
 		return self.tags.get(tag, default)
+	return func
 
+def entity_attribute(tag):
+	@property
+	def func(self):
+		return self.game.find_entity_by_id(self.tags.get(tag, 0))
 	return func
 
 class Entity:
@@ -127,8 +132,12 @@ class Option:
 class Game(Entity):
 	_args = ("players", )
 	can_be_in_deck = False
+	turn_number = tag_attribute(GameTag.TURN_NUMBER)
+	step_player = entity_attribute(GameTag.STEP_PLAYER)
+	turn_player = entity_attribute(GameTag.TURN_PLAYER)
+	step = tag_attribute(GameTag.STEP)
 
-	def __init__(self, id):
+	def __init__(self, id=1):
 		super(Game, self).__init__(id)
 		self.players = []
 		self.entities = []
@@ -136,6 +145,7 @@ class Game(Entity):
 		self.options = []
 		#self.initial_state = State.INVALID
 		self.initial_step = Step.INVALID
+
 
 	@property
 	def current_player(self):

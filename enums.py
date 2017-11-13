@@ -34,6 +34,10 @@ class GameTag(IntEnum):
 	DECLARED_ATTACK		= 22
 	DECLARED_INTERCEPT	= 23
 
+	TURN_NUMBER		= 24
+	TURN_PLAYER		= 25
+	STEP_PLAYER		= 25
+
 
 	# Keywords
 	MUDDLE		= 100

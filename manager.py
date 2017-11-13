@@ -55,8 +55,10 @@ class GameManager(Manager):
 		#GameTag.PROPOSED_ATTACKER: "proposed_attacker",
 		#GameTag.PROPOSED_DEFENDER: "proposed_defender",
 		#GameTag.STATE: "state",
-		#GameTag.STEP: "step",
-		#GameTag.TURN: "turn",
+		GameTag.STEP: "step",
+		GameTag.TURN_NUMBER: "turn",
+		GameTag.TURN_PLAYER: "current_player",
+		GameTag.STEP_PLAYER: "step_player",
 		GameTag.ZONE: "zone",
 	}
 
