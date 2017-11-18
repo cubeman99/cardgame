@@ -9,8 +9,7 @@ from utils import CardList
 from enums import *
 from logic.actions import *
 import cards
-
-
+import json
 
 
 class Game(Entity):
@@ -57,7 +56,7 @@ class Game(Entity):
 
 	@property
 	def id(self):
-		return self.entity_id
+		return "Game"
 
 	@property
 	def name(self):
@@ -68,6 +67,58 @@ class Game(Entity):
 
 	def __repr__(self):
 		return "%s" % (self.__class__.__name__)
+
+	def serialize_state(self):
+		state = {}
+		for entity in self:
+			entity_state = {}
+			state[entity.entity_id] = entity_state
+			for tag, value in entity.tags.items():
+				type = tag.type
+				if isinstance(value, str):
+					entity_state[tag] = value
+				elif type == Type.ENTITY or type == Type.PLAYER:
+					if value != None:
+						entity_state[tag] = int(value)
+					else:
+						entity_state[tag] = -1
+				else:
+					entity_state[tag] = int(value)
+		return state
+
+	def deserialize_state(self, state):
+		# Clear current state first.
+		#self = Game()
+
+		# Create entity objects.
+		entities = {}
+		for entity_id, tags in state.items():
+			type = tags[GameTag.CARD_TYPE]
+			entity = None
+			if type == CardType.GAME:
+				entity = self
+			elif type == CardType.PLAYER:
+				entity = self.find_entity(entity_id)
+			else:
+				card_id = tags[GameTag.CARD_ID]
+				entity = self.create_card(card_id)
+				self.game.manager.new_entity(entity)
+				entity.entity_id = entity_id
+			if entity:
+				entities[entity_id] = entity
+
+		# Deserialize entity tags
+		for entity_id, tags in state.items():
+			entity = entities[entity_id]
+
+			entity.controller = tags.get(GameTag.CONTROLLER, None)
+
+			for tag, value in tags.items():
+				type = tag.type
+				if type == Type.ENTITY or type == Type.PLAYER:
+					value = entities.get(value, None)
+				entity.tags[tag] = value
+
 
 	# Function to create a card instance of the correct class.
 	def create_card(self, id):
@@ -173,7 +224,10 @@ class Game(Entity):
 	def trigger_actions(self, source, actions):
 		result = []
 		for action in actions:
-			result.append(action.trigger(source))
+			if isinstance(action, EventListener):
+				raise NotImplementedError
+			else:
+				result.append(action.trigger(source))
 		return result
 
 	def trigger(self, source, actions, event_args):
