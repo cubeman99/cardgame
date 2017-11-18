@@ -74,6 +74,8 @@ class CardDatabase(dict):
 		if hasattr(card_info, "cost"):
 			card.tags[GameTag.MORALE] = card_info.cost[0]
 			card.tags[GameTag.SUPPLY] = card_info.cost[1]
+		if hasattr(card_info, "targets"):
+			card.play_targets = list(card_info.targets)
 		if hasattr(card_info, "tags"):
 			card.tags.update(card_info.tags)
 

@@ -1,5 +1,5 @@
 
-from game import Game
+from game import Game, GameSerializer
 from enums import *
 from player import Player
 import cards
@@ -25,6 +25,7 @@ class GameSerializer(json.JSONEncoder):
 		if isinstance(o, CardList):
 			return len(o)
 		return int(o)
+	
 
 
 class ServerManager:
@@ -152,11 +153,12 @@ class ServerManager:
 		if entity.zone == Zone.HAND:
 			if entity.type in [CardType.SPELL, CardType.UNIT]:
 				if entity.is_playable():
+					targets = list(entity.play_targets)
 					yield {
 						"Type": OptionType.PLAY,
 						"MainOption": {
 							"ID": entity,
-							"Targets": list(entity.targets),
+							"Targets": list(targets),
 						},
 					}
 
@@ -213,6 +215,8 @@ class ClientThread(Thread):
 			if not data:
 				continue
 
+			print("Received data from %s: %s" %(self.player, data))
+
 			message = self.decoder.decode(data.decode("utf-8"))
 			self.server.receive_data(self.player, message)
 			for connection in self.server.connections:
@@ -235,6 +239,7 @@ class ClientThread(Thread):
 		"""Helper function to recv n bytes or return None if EOF is hit"""
 		data = b""
 		while len(data) < n:
+			packet = None
 			try:
 				packet = self.connection.recv(n - len(data))
 			except:
@@ -361,7 +366,10 @@ class Server:
 		self.game.player1.shuffle_deck()
 		self.game.player2.shuffle_deck()
 		self.game.begin_turn(self.game.player1)
-		#self.game.player1.hand[0].play()
+		self.game.player1.hand[0].play()
+		self.game.player1.hand[1].play()
+		self.game.player2.hand[0].play()
+		self.game.player2.hand[1].play()
 
 		deck_size = len([card for card in self.game.player1.deck])
 		print("Deck size = %d" %(deck_size))

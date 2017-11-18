@@ -74,7 +74,7 @@ class StarvingCephalopod:
 	stats	= (0, 0)
 	corrupt	= Buff(SELF, "StarvingCephalopod_Buff",
 		power = POWER(TARGET) * 2,
-		max_health = CURRENT_HEALTH(TARGET) * 2)
+		max_health = HEALTH(TARGET) * 2)
 
 class AgileSquirmer:
 	name	= "Agile Squirmer"
@@ -95,7 +95,7 @@ class AgileSquirmer_Token:
 	stats	= (1, 3)
 
 class ElegalthsDeputy:
-	name	= "Elegalth's  Deputy"
+	name	= "Elegalth's Deputy"
 	text	= "All corrupts, trigger twice while alive, Aftermath: summon a 1/1"
 	type	= CardType.UNIT
 	tribe	= Tribe.OCTOPI
@@ -105,7 +105,7 @@ class ElegalthsDeputy:
 
 # TODO: Name this token
 class ElegalthsDeputy_Token:
-	name	= "Servant of Elagalth Token"
+	name	= "Elegalth's Deputy Token"
 	type	= CardType.UNIT
 	tribe	= Tribe.OCTOPI
 	cost	= (0, 0)
@@ -178,6 +178,7 @@ class ElegalthsChosen:
 	battle	= True
 	tribe	= Tribe.OCTOPI
 	cost	= (0, 0)
+	targets	= [ALLIED_UNITS]
 	play	= Buff(TARGET, "ElegalthsChosen_Buff")
 
 class ElegalthsChosen_Buff:
@@ -223,6 +224,7 @@ class SacrificialIncantation:
 	type	= CardType.SPELL
 	tribe	= Tribe.OCTOPI
 	cost	= (3, 0)
+	targets	= [ALL_UNITS]
 	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER) # TODO: allow additional cast (return to hand??)
 
 class PotentAfterlife:
@@ -239,6 +241,7 @@ class ExtremePressure:
 	type	= CardType.SPELL
 	tribe	= Tribe.OCTOPI
 	cost	= (0, 1)
+	targets	= [ALL_UNITS]
 	play	= Damage(TARGET, 3), Alive(TARGET) & Summon(CONTROLLER, "ExtremePressure_Token")
 
 class ExtremePressure_Token:

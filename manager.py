@@ -109,7 +109,7 @@ class PlayerManager(Manager):
 		GameTag.SUPPLY:			"supply",
 		GameTag.MAX_HAND_SIZE:	"max_hand_size",
 		GameTag.CONTROLLER:		"controller",
-		GameTag.ZONE:			"zone",
+		#GameTag.ZONE:			"zone",
 		GameTag.TEXT:			None,
 	}
 
@@ -118,8 +118,8 @@ class CardManager(Manager):
 	map = {
 		GameTag.CARD_ID:		"id",
 		GameTag.CARD_TYPE:		"type",
-		GameTag.NAME:			"name",
-		GameTag.TEXT:			None,
+		#GameTag.NAME:			"name",
+		#GameTag.TEXT:			"text",
 
 		GameTag.POWER:			"power",
 		GameTag.HEALTH:			"max_health",

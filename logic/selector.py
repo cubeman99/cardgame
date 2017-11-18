@@ -29,6 +29,9 @@ class Selector:
 	def __add__(self, other: SelectorLike) -> "Selector":
 		return SetOpSelector(operator.and_, self, other)
 
+	def __and__(self, other: SelectorLike) -> "Selector":
+		return SetOpSelector(operator.and_, self, other)
+
 	def __or__(self, other: SelectorLike) -> "Selector":
 		return SetOpSelector(operator.or_, self, other)
 
@@ -233,14 +236,13 @@ Tribe.test = lambda self, entity, *args: entity is not None and self == getattr(
 Zone.test = lambda self, entity, *args: entity is not None and self == entity.zone
 #CardClass.test = lambda self, entity, *args: entity is not None and self == getattr(entity, "card_class", CardClass.INVALID)
 
+
 # Functions
 SELF			= FuncSelector(lambda entities, source: [source], name="SELF")
 ATTACKER		= FuncSelector(lambda entities, source: [source.attacker], name="ATTACKER")
 DEFENDER		= FuncSelector(lambda entities, source: [source.defender], name="DEFENDER")
 TARGET			= FuncSelector(lambda entities, source: [source.target], name="TARGET")
 SOURCE_OF_DEATH	= FuncSelector(lambda entities, source: [source.source_of_death], name="SOURCE_OF_DEATH")
-
-#ZONE = AttrValue("zone")
 
 # Keywords
 INSPIRE     = EnumSelector(GameTag.INSPIRE)
@@ -261,8 +263,8 @@ DRAKE		= EnumSelector(Tribe.DRAKE)
 # Attributes
 CARD_TYPE		= AttrValue("type")
 POWER			= AttrValue(GameTag.POWER)
-HEALTH			= AttrValue(GameTag.HEALTH)
-CURRENT_HEALTH	= AttrValue("health")
+MAX_HEALTH		= AttrValue(GameTag.HEALTH)
+HEALTH			= AttrValue("health")
 MORALE			= AttrValue(GameTag.MORALE)
 SUPPLY			= AttrValue(GameTag.SUPPLY)
 INSPIRE			= AttrValue(GameTag.INSPIRE)
@@ -289,22 +291,23 @@ PLAYER	= CARD_TYPE == CardType.PLAYER
 UNIT	= CARD_TYPE == CardType.UNIT
 SPELL	= CARD_TYPE == CardType.SPELL
 
-ALL_PLAYERS	= PLAYER
-ALL_UNITS	= IN_PLAY + UNIT
-ALL_SPELLS	= SPELL
+ALL_PLAYERS		= PLAYER
+ALL_UNITS		= IN_PLAY & UNIT
+ALL_SPELLS		= SPELL
+ALL_CHARACTERS	= PLAYER | (UNIT & IN_PLAY)
 
-CONTROLLER		= ALLIED + PLAYER
-ALLIED_HAND		= IN_HAND + ALLIED
-ALLIED_DECK		= IN_DECK + ALLIED
-ALLIED_UNITS	= IN_PLAY + ALLIED + UNIT
+CONTROLLER		= ALLIED & PLAYER
+ALLIED_HAND		= IN_HAND & ALLIED
+ALLIED_DECK		= IN_DECK & ALLIED
+ALLIED_UNITS	= IN_PLAY & ALLIED & UNIT
 
-YOUR_HAND		= IN_HAND + ALLIED
-YOUR_DECK		= IN_DECK + ALLIED
-YOUR_UNITS		= IN_PLAY + ALLIED + UNIT
+YOUR_HAND		= IN_HAND & ALLIED
+YOUR_DECK		= IN_DECK & ALLIED
+YOUR_UNITS		= IN_PLAY & ALLIED & UNIT
 
-OPPONENT		= ENEMY + PLAYER
-ENEMY_HAND		= IN_HAND + ENEMY
-ENEMY_DECK		= IN_DECK + ENEMY
-ENEMY_UNITS		 = IN_PLAY + ENEMY + UNIT
+OPPONENT		= ENEMY & PLAYER
+ENEMY_HAND		= IN_HAND & ENEMY
+ENEMY_DECK		= IN_DECK & ENEMY
+ENEMY_UNITS		= IN_PLAY & ENEMY & UNIT
 
 

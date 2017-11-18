@@ -3,6 +3,7 @@ from entity import Entity, int_property
 from manager import Manager, CardManager
 from itertools import chain
 from enums import *
+import logic.selector
 
 MAX_HAND_SIZE = 6
 
@@ -22,9 +23,34 @@ class BaseCard(Entity):
 		self.type = data.type
 		self.owner = None
 
+	def get_all_actions(self, name):
+		return getattr(self.data.scripts, name)
+		#actions = self.get_actions(name)
+		#if isinstance(actions, tuple):
+		#	actions = list(actions)
+		#if not isinstance(actions, list):
+		#	actions = [actions]
+		#if actions == None:
+		#	actions = []
+		#return actions
+
 	@property
 	def entities(self):
 		return chain([self], self.buffs)
+
+	@property
+	def play_targets(self):
+		# Evaluate play targets based on current board state.
+		target_selectors = list(self.data.play_targets)
+		print(self.get_all_actions("corrupt"))
+		if self.get_all_actions("corrupt"):
+			target_selectors = [logic.selector.ALLIED_UNITS] + target_selectors
+		targets = []
+		for selector in target_selectors:
+			targets.append(selector.eval(
+				entities=self.game.entities,
+				source=self.controller))
+		return targets
 
 	@property
 	def targets(self):
@@ -143,6 +169,7 @@ class BaseCard(Entity):
 
 	def play(self, target=None):
 		self.game.play_card(self, target)
+		return self
 
 	def destroy(self):
 		pass
@@ -190,17 +217,6 @@ class LiveEntity(BaseCard):
 	@property
 	def dead(self):
 		return self.zone == Zone.DISCARD or self.to_be_destroyed
-
-	def get_all_actions(self, name):
-		return getattr(self.data.scripts, name)
-		#actions = self.get_actions(name)
-		#if isinstance(actions, tuple):
-		#	actions = list(actions)
-		#if not isinstance(actions, list):
-		#	actions = [actions]
-		#if actions == None:
-		#	actions = []
-		#return actions
 
 
 	@property

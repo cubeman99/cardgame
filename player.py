@@ -28,7 +28,7 @@ class Player(LiveEntity):
 		self.hand = CardList()
 		self.discarded = CardList()
 		self.field = CardList()
-		self.zone = Zone.INVALID
+		self._zone = Zone.PLAY
 		self.last_card_played = None
 		self.controller = self
 
@@ -125,6 +125,7 @@ class Player(LiveEntity):
 		else:
 			card.controller = self
 			card.zone = Zone.HAND
+		return card
 
 	def play(self, card):
 		card.zone = Zone.PLAY

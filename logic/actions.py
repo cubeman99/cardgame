@@ -226,6 +226,8 @@ class TargetedAction(Action):
 
 	def trigger(self, source):
 		ret = []
+		print("  %r" %(self))
+		print("  event_args = %r" %(str(source.event_args)))
 
 		if self.source is not None:
 			source = self.source.eval(source.game, source)
@@ -243,14 +245,16 @@ class TargetedAction(Action):
 			args = self.get_args(source)
 			targets = self.get_targets(source, args[0])
 			args = args[1:]
-			#action_log.log("%r triggering %r targeting %r", source, self, targets)
+			action_log.log("%r triggering %r targeting %r", source, self, targets)
 			for target in targets:
 				target_args = self.get_target_args(source, target)
+				print("**INVOKE: %r" %(str(target_args)))
 				ret.append(self.invoke(source, target, *target_args))
 
-				#for action in self.callback:
-				#	log.info("%r queues up callback %r", self, action)
-				#	ret += source.game.queue_actions(source, [action], event_args=[target] + target_args)
+				for action in self.callback:
+					action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
+					print(target_args)
+					ret += source.game.queue_actions(source, [action], event_args=[target] + target_args)
 
 		#self.resolve_broadcasts()
 
@@ -260,13 +264,15 @@ class TargetedAction(Action):
 # Actions
 #==============================================================================
 
-class Attack(GameAction):
+class Attack(TargetedAction):
 	ATTACKER = ActionArg()
 	DEFENDER = ActionArg()
 
 	text = "{attacker} attacks {defender}"
 
 	def invoke(self, source, attacker, defender):
+		if isinstance(defender, list):
+			defender = defender[0]
 		action_log.log("%r attacks %r", attacker, defender)
 		attacker.defender = defender
 		defender.attacker = attacker

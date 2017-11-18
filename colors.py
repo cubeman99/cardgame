@@ -39,6 +39,10 @@ class Colors:
 	CYAN			= "\033[38;5;14m"
 	WHITE			= "\033[38;5;15m"
 
+	TEST_PASS		= "\033[38;5;46m"
+	TEST_FAIL		= "\033[38;5;196m"
+	TEST_WARN		= "\033[38;5;11m"
+
 	DEFAULT			= "\033[0m"
 	BUFFED_STAT		= "\033[32m"
 	DAMAGED_HEALTH	= "\033[31m"
@@ -143,6 +147,9 @@ if not supports_color():
 	Colors.PLAYABLE			= Colors.GREEN
 	Colors.ACTIVATED		= Colors.YELLOW
 
+	Colors.TEST_PASS		= Colors.GREEN
+	Colors.TEST_FAIL		= Colors.RED
+	Colors.TEST_WARN		= Colors.YELLOW
 
 	stdout_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
 	SetConsoleTextAttribute = windll.kernel32.SetConsoleTextAttribute

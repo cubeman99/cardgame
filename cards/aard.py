@@ -66,7 +66,9 @@ class WarpackChieftan:
 	tribe	= Tribe.AARD
 	cost	= (1, 1)
 	stats	= (2, 5)
-	events	= Attack(SELF, ALL_UNITS).after(Summon(CONTROLLER, "WarpackChieftan_Token"))
+	events	= Attack(SELF, ALL_CHARACTERS).after(
+		Summon(CONTROLLER, "WarpackChieftan_Token").then(
+		Attack(Summon.CARD, OPPONENT)))
 	# TODO: summoned unit must attack the OPPONENT
 
 class WarpackChieftan_Token:

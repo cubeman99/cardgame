@@ -100,4 +100,11 @@ class CardList(list):
 if __name__=="__main__":
 	import os
 	print(os.getlogin())
+	from logic.actions import *
+	a = Summon.CARD
+	print(isinstance(a, CardArg))
+	a = Summon(SELF, "")
+	a = a.CARD
+	print(isinstance(a, CardArg))
+		#.evaluate()
 

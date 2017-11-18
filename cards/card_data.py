@@ -22,6 +22,7 @@ class CardData:
 	def __init__(self, id):
 		self.id = id
 		self.tags = {}
+		self.play_targets = []
 
 	def __str__(self):
 		return self.name
@@ -51,5 +52,4 @@ class CardData:
 	health		= prop(GameTag.HEALTH)
 	morale		= prop(GameTag.MORALE)
 	supply		= prop(GameTag.SUPPLY)
-
 
