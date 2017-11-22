@@ -20,10 +20,9 @@ class CardData:
 	def name(self):
 		return self.tags[GameTag.NAME]
 
-cards = []
+cards = {}
 
 def initialize():
-
 	print("Initializing card details")
 
 	# Load the json file.
@@ -35,7 +34,7 @@ def initialize():
 	for id, tags in data.items():
 		card = load_card(id, tags)
 		if card:
-			cards.append(card)
+			cards[id] = card
 
 def load_card(id, tags):
 	card = CardData(id)
@@ -51,17 +50,17 @@ def load_card(id, tags):
 			value = getattr(type, value.upper(), None)
 			if value == None:
 				pass
+
 		card.tags[key] = value
 	return card
 
 def find(id):
 	"""Find a card by it's card ID"""
-	for card in cards:
-		if card.id == id:
-			return card
-	return None
+	#return cards[id]
+	return cards.get(id, None)
 
-initialize()
+
+#initialize()
 
 
 

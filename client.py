@@ -154,10 +154,14 @@ class Client:
 		if action == "play":
 			#msg.type = ClientMessage.PLAY
 			#msg.args = [int(args[0])]
+			targets = []
+			if len(args) > 1:
+				targets = [int(x) for x in args[1:]]
 			return {
 				"Type": "Play",
 				"Play": {
 					"EntityID": int(args[0]),
+					"Targets": targets,
 				}
 			}
 
@@ -475,6 +479,8 @@ class Client:
 
 
 if __name__=="__main__":
+	card_details.initialize()
+
 	DEFAULT_HOST = "localhost"
 	DEFAULT_PORT = 32764
 	DEFAULT_NAME = os.getlogin()

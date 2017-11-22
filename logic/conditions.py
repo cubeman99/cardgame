@@ -43,6 +43,11 @@ class Condition:
 		ret._if = action
 		return ret
 
+	def then(self, action):
+		ret = copy.copy(self)
+		ret._if = action
+		return ret
+
 	# OR operator acts as an "else" clause
 	def __or__(self, action):
 		ret = copy.copy(self)

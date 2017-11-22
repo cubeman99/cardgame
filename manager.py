@@ -4,18 +4,29 @@ import logging
 
 
 class Manager(object):
+	"""Maps tags to attributes of an entity"""
+
 	def __init__(self, obj):
 		self.obj = obj
 		self.observers = []
 
 	def __getitem__(self, tag):
-		if self.map.get(tag):
+		"""Get the value of a tag. Raises KeyError if the tag is not defined """
+		if self.map.get(tag, None) != None:
 			return getattr(self.obj, self.map[tag], 0)
-		raise KeyError
+		else:
+			return self.obj.data.tags[tag]
+
+	def get(self, tag, default=None):
+		"""Get the value of a tag or return the default if it is not defined"""
+		if tag in self.map:
+			return self[tag]
+		else:
+			return self.obj.data.tags.get(tag, default)
 
 	def __setitem__(self, tag, value):
+		"""Set the value of a tag"""
 		try:
-			#setattr(self.obj, "power", 0)
 			setattr(self.obj, self.map[tag], value)
 		except AttributeError:
 			print("Error: cannot set attribute %r to %r for %s" %(self.map[tag], value, self.obj.__class__.__name__))
@@ -27,23 +38,24 @@ class Manager(object):
 			if self.map[k]:
 				yield k
 
-	def get(self, k, default=None):
-		return self[k] if k in self.map else default
-
 	def items(self):
+		"""Return a list of tag key/value pairs"""
 		for k, v in self.map.items():
 			if v is not None:
 				yield k, self[k]
 
 	def register(self, observer):
+		"""Register an observer"""
 		self.observers.append(observer)
 
 	def update(self, tags):
+		"""Update tags with values from a dictionary"""
 		for k, v in tags.items():
 			if self.map.get(k) is not None:
 				self[k] = v
 
 	def keys(self):
+		"""Return the list of tags that are mapped to attributes"""
 		return self.map.keys()
 
 
@@ -67,9 +79,9 @@ class GameManager(Manager):
 		self.counter = 0
 		obj.entity_id = self.counter
 
-	def action_start(self, type, source, index, target):
+	def action_start(self, type, source, index, targets):
 		for observer in self.observers:
-			observer.action_start(type, source, index, target)
+			observer.action_start(type, source, index, targets)
 
 	def action_end(self, type, source):
 		for observer in self.observers:
@@ -143,7 +155,7 @@ class CardManager(Manager):
 
 # Base class for all observers
 class BaseObserver:
-	def action_start(self, type, source, index, target):
+	def action_start(self, type, source, index, targets):
 		pass
 
 	def action_end(self, type, source):

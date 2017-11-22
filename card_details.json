@@ -3,7 +3,7 @@
 		"fury": 1,
 		"name": "Blackblood Bruiser",
 		"text": "Toxic, Fury",
-		"conduit": 1,
+		"toxic": 1,
 		"tribe": "aard",
 		"power": 0,
 		"health": 3,
@@ -352,7 +352,7 @@
 		"card_type": "unit"
 	},
 	"ElegalthsDeputy": {
-		"name": "Elegalth's  Deputy",
+		"name": "Elegalth's Deputy",
 		"text": "All corrupts, trigger twice while alive, Aftermath: summon a 1/1",
 		"tribe": "octopi",
 		"power": 2,
@@ -363,7 +363,7 @@
 		"card_type": "unit"
 	},
 	"ElegalthsDeputy_Token": {
-		"name": "Servant of Elagalth Token",
+		"name": "Elegalth's Deputy Token",
 		"tribe": "octopi",
 		"power": 1,
 		"health": 1,
@@ -429,7 +429,7 @@
 		"health": 3,
 		"morale": 0,
 		"supply": 0,
-		"aftermath": 1,
+		"corrupt": 1,
 		"card_type": "unit"
 	},
 	"NoxiousTentacle": {
@@ -523,6 +523,7 @@
 		"health": 1,
 		"morale": 0,
 		"supply": 0,
+		"emerge": 1,
 		"card_type": "unit"
 	},
 	"TestCard_Buff": {

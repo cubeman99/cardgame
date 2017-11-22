@@ -22,7 +22,6 @@ import tests.unit_test_framework as pyunit
 class CardTests(pyunit.TestCase):
 
 	def test_infested_whale(self):
-		return
 		game = Game()
 		whale = game.player1.give("InfestedWhale")
 		attacker = game.player2.give("SunkenGoliath")
@@ -31,14 +30,12 @@ class CardTests(pyunit.TestCase):
 
 		self.expect_eq(len(game.player1.field), 1)
 
-		game.action_block(game.player2,
-			actions.Attack(attacker, whale), type=BlockType.ATTACK)
+		attacker.attack(whale)
 
 		self.expect_eq(len(game.player1.field), 2)
 		self.expect_eq(whale.zone, Zone.DISCARD)
 
 	def test_warpack_chieftan(self):
-		return
 		game = Game()
 		chief = game.player1.give("WarpackChieftan")
 		chief.play()
@@ -49,22 +46,56 @@ class CardTests(pyunit.TestCase):
 		self.expect_eq(game.player1.territory, 0)
 		self.expect_eq(len(game.player1.field), 1)
 
-		game.action_block(game.player1,
-			actions.Attack(chief, game.player2), type=BlockType.ATTACK)
+		chief.attack(game.player2)
 
 		self.expect_eq(defender.health, 3)
 		self.expect_eq(game.player1.territory, 3)
 		self.expect_eq(len(game.player1.field), 2)
 
-		game.action_block(game.player1,
-			actions.Attack(chief, defender), type=BlockType.ATTACK)
+		chief.attack(defender)
 
 		self.expect_eq(defender.health, 1)
 		self.expect_eq(game.player1.territory, 4)
 		self.expect_eq(len(game.player1.field), 3)
 
 
+	def test_necrolight_soldier(self):
+		game = Game()
+		target1 = game.player1.give("InfestedWhale").play()
+		target2 = game.player2.give("InfestedWhale").play()
+		card = game.player1.give("NecrolightSoldier")
+		self.expect(card.corrupts)
+
+		self.expect_eq(len(game.player1.field), 1)
+		self.expect_eq(len(game.player2.field), 1)
+		self.expect_eq(target2.damage, 0)
+
+		card.play(targets=[target1, target2])
+
+		self.expect_eq(len(game.player1.field), 3)
+		self.expect_eq(len(game.player2.field), 1)
+		self.expect_eq(target2.damage, 2)
+
+
 class PlayTargets(pyunit.TestCase):
+
+	def test_play_target(self):
+		game = Game()
+		#card = game.player1.give("AgileSquirmer")
+		card = game.player1.give("TestCard")
+		target = game.player2.give("SunkenGoliath").play()
+		target2 = game.player2.give("SunkenGoliath").play()
+
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_eq(target.damage, 0)
+		self.expect_eq(target2.damage, 0)
+
+		card.play(targets=[target, target2])
+
+		self.expect_eq(card.zone, Zone.PLAY)
+		self.expect_eq(target.damage, 3)
+		self.expect_eq(target2.damage, 2)
+
 
 	def test_corrupt_with_additional_target(self):
 		"""Verify the play targets for a card with corrupt begins with allied
@@ -100,6 +131,24 @@ class PlayTargets(pyunit.TestCase):
 		self.expect(allied_unit2 in play_targets[1])
 		self.expect(enemy_unit1 in play_targets[1])
 		self.expect(enemy_unit2 in play_targets[1])
+		play_targets = card.play_targets
+
+		# Corrupt: Deal 2 damage to an enemy unit
+		card = game.player1.give("NecrolightSoldier")
+		play_targets = card.play_targets
+		self.expect_eq(len(play_targets), 2)
+
+		self.expect_eq(len(play_targets[0]), 2)
+		self.expect(allied_unit1 in play_targets[0])
+		self.expect(allied_unit2 in play_targets[0])
+		self.expect(enemy_unit1 not in play_targets[0])
+		self.expect(enemy_unit2 not in play_targets[0])
+
+		self.expect_eq(len(play_targets[1]), 2)
+		self.expect(allied_unit1 not in play_targets[1])
+		self.expect(allied_unit2 not in play_targets[1])
+		self.expect(enemy_unit1 in play_targets[1])
+		self.expect(enemy_unit2 in play_targets[1])
 
 
 
@@ -125,7 +174,7 @@ class PlayTargets(pyunit.TestCase):
 		self.expect(invalid_target1 not in play_targets[0])
 		self.expect(invalid_target2 not in play_targets[0])
 
-class Serialiazation(pyunit.TestCase):
+class Serialization(pyunit.TestCase):
 
 	def test_serialize(self):
 		game1 = Game()
@@ -133,8 +182,7 @@ class Serialiazation(pyunit.TestCase):
 		c1 = game1.player1.give("OctopiExile").play()
 		c2 = game1.player2.give("OctopiExile").play()
 		game1.player2.give("OctopiExile").play()
-		game1.action_block(game1.player1,
-			actions.Attack(c1, c2), type=BlockType.ATTACK)
+		c1.attack(c2)
 
 		state1 = game1.serialize_state()
 
@@ -155,6 +203,11 @@ class Serialiazation(pyunit.TestCase):
 		self.expect_eq(str(state2), str(state1))
 
 
+
 if __name__=="__main__":
 	cards.db.initialize()
+
+	logging.action_log.disable()
 	pyunit.run_all_tests(globals())
+
+

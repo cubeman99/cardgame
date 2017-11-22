@@ -6,6 +6,7 @@ from enums import *
 import sys
 import inspect
 import os
+import card_details
 
 class CardScripts:
 	pass
@@ -25,7 +26,9 @@ class CardDatabase(dict):
 		#card.id = card_class.__name__
 		#print("Setting up card %s" %(card.id))
 
-		#card.tags = {}
+		details = card_details.find(id)
+		if details:
+			card.tags.update(details.tags)
 
 		card_info = type(card_class.__name__, (card_class, ), {})
 
@@ -106,6 +109,7 @@ class CardDatabase(dict):
 
 
 if "db" not in globals():
+	card_details.initialize()
 	db = CardDatabase()
 
 	# Load all cards into the database.
@@ -128,3 +132,4 @@ if "db" not in globals():
 				#print(os.path.basename(inspect.getsourcefile(obj)))
 
 	#print(dict([(name, cls) for name, cls in octopi.__dict__.items() if isinstance(cls, type)]))
+

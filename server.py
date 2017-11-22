@@ -1,5 +1,5 @@
 
-from game import Game, GameSerializer
+from game import Game
 from enums import *
 from player import Player
 import cards
@@ -25,7 +25,7 @@ class GameSerializer(json.JSONEncoder):
 		if isinstance(o, CardList):
 			return len(o)
 		return int(o)
-	
+
 
 
 class ServerManager:
@@ -171,7 +171,7 @@ class ServerManager:
 							"Type": OptionType.DECLARE,
 							"MainOption": {
 								"ID": entity,
-								"Targets": targets,
+								"Targets": [targets],
 							}
 						}
 				elif entity.can_intercept():
@@ -181,7 +181,7 @@ class ServerManager:
 							"Type": OptionType.DECLARE,
 							"MainOption": {
 								"ID": entity,
-								"Targets": targets,
+								"Targets": [targets],
 							}
 						}
 
@@ -335,6 +335,7 @@ class Server:
 		#self.game.player1.give("ExtremePressure")
 		self.game.player1.give("RageheartThug")
 		self.game.player1.give("AgileSquirmer")
+		self.game.player1.give("NecrolightSoldier")
 
 		"""self.game.player1.give("RageheartThug")
 		self.game.player1.give("OctopiExile")
@@ -370,6 +371,10 @@ class Server:
 		self.game.player1.hand[1].play()
 		self.game.player2.hand[0].play()
 		self.game.player2.hand[1].play()
+		self.game.player1.morale += 100
+		self.game.player1.supply += 100
+		self.game.player2.morale += 100
+		self.game.player2.supply += 100
 
 		deck_size = len([card for card in self.game.player1.deck])
 		print("Deck size = %d" %(deck_size))
@@ -478,13 +483,16 @@ class Server:
 		elif type == "Play":
 			data = message.get("Play")
 			entity_id = data["EntityID"]
+			targets = data["Targets"]
+			for i in range(0, len(targets)):
+				targets[i] = self.game.find_entity(targets[i])
 
 			card = self.game.find_entity(entity_id)
 			if not card:
 				print("Card ID '%d' does not exist" %(entity_id))
 				return False
 			print("Playing %s" %(card.name))
-			card.play()
+			card.play(targets=targets)
 			return True
 
 		elif type == "Attack":
@@ -505,17 +513,17 @@ class Server:
 		elif type == "Intercept":
 			data = message.get("Intercept")
 			interceptor = self.game.find_entity(data["Interceptor"])
-			defender = self.game.find_entity(data["Defender"])
+			attacker = self.game.find_entity(data["Attacker"])
 			if not interceptor:
 				print("Card ID '%s' does not exist" %(data["Interceptor"]))
 				return CommandResponse.INVALID
 				return False
-			if not defender:
-				print("Card ID '%s' does not exist" %(data["Defender"]))
+			if not attacker:
+				print("Card ID '%s' does not exist" %(data["Attacker"]))
 				return CommandResponse.INVALID
 				return False
-			interceptor.declared_intercept = defender
-			print("%s declared intercept: %r -> %r" %(player, interceptor, defender))
+			interceptor.declared_intercept = attacker
+			print("%s declared intercept: %r -> %r" %(player, interceptor, attacker))
 
 		elif type == "DebugAttack":
 			data = message.get("DebugAttack")

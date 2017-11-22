@@ -50,7 +50,7 @@ class Game(Entity):
 
 		self.current_player = players[0] # Player whose turn it is.
 		self.step_player = players[0] # Player who controls the current step
-		self.choosing_player = players[0] # Player who is currently choosing an action
+		self.choosing_player = players[0] # Player who is currently choosing an action or choice
 		self.step = Step.PLAY
 		#self.state = State.INVALID
 
@@ -132,11 +132,11 @@ class Game(Entity):
 		card = subclass(data)
 		return card
 
-	def play_card(self, card, target):
+	def play_card(self, card, targets=[]):
 		type = BlockType.PLAY
 		player = card.controller
-		actions = [Play(card, target)]
-		return self.action_block(player, actions, type, target=target)
+		actions = [Play(card, targets)]
+		return self.action_block(player, actions, type, targets=targets)
 
 
 	@property
@@ -186,8 +186,8 @@ class Game(Entity):
 			for unit in player.field:
 				print("   %3d. %d/%d %s" %(unit.entity_id, unit.power, unit.health, unit.name))
 
-	def action_start(self, type, source, index, target):
-		self.manager.action_start(type, source, index, target)
+	def action_start(self, type, source, index, targets):
+		self.manager.action_start(type, source, index, targets)
 		#if type != BlockType.PLAY:
 		#	self._action_stack += 1
 
@@ -204,8 +204,8 @@ class Game(Entity):
 		self.refresh_auras()
 		self.process_deaths()
 
-	def action_block(self, source, actions, type, index=-1, target=None, event_args=None):
-		self.action_start(type, source, index, target)
+	def action_block(self, source, actions, type, index=-1, targets=None, event_args=None):
+		self.action_start(type, source, index, targets)
 		if actions:
 			ret = self.queue_actions(source, actions, event_args)
 		else:

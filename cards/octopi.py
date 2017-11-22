@@ -43,7 +43,7 @@ class EchoingFiend:
 	tribe	= Tribe.OCTOPI
 	cost	= (1, 1)
 	stats	= (2, 4)
-	corrupt = Summon(CONTROLLER, ExactCopy(TARGET))
+	corrupt = Summon(CONTROLLER, ExactCopy(CORRUPTED_UNIT))
 
 class ServantOfElagalth:
 	name	= "Servant of Elagalth"
@@ -73,8 +73,8 @@ class StarvingCephalopod:
 	cost	= (1, 1)
 	stats	= (0, 0)
 	corrupt	= Buff(SELF, "StarvingCephalopod_Buff",
-		power = POWER(TARGET) * 2,
-		max_health = HEALTH(TARGET) * 2)
+		power = POWER(CORRUPTED_UNIT) * 2,
+		max_health = HEALTH(CORRUPTED_UNIT) * 2)
 
 class AgileSquirmer:
 	name	= "Agile Squirmer"
@@ -83,7 +83,8 @@ class AgileSquirmer:
 	tribe	= Tribe.OCTOPI
 	cost	= (1, 2)
 	stats	= (4, 2)
-	emerge = Damage(ENEMY_UNITS, 3)
+	targets	= [ENEMY_UNITS]
+	emerge	= Damage(TARGET, 3)
 	aftermath = Summon(CONTROLLER, "AgileSquirmer_Token")
 
 # TODO: Name this token
@@ -118,7 +119,8 @@ class NecrolightSoldier:
 	tribe	= Tribe.OCTOPI
 	cost	= (0, 0)
 	stats	= (2, 3)
-	aftermath = Damage(ENEMY_UNITS, 2)
+	targets = [ENEMY_UNITS]
+	corrupt	= Damage(TARGET[1], 2)
 
 class NoxiousTentacle:
 	name = "Noxious Tentacle"
@@ -127,7 +129,7 @@ class NoxiousTentacle:
 	tribe = Tribe.OCTOPI
 	cost	= (0, 0)
 	stats	= (2, 1)
-	aftermath = Exists(SOURCE_OF_DEATH + UNIT) & Damage(SOURCE_OF_DEATH, 2)
+	aftermath = Exists(SOURCE_OF_DEATH & UNIT).then(Damage(SOURCE_OF_DEATH, 2))
 
 class SunkenGoliath:
 	name = "Sunken Goliath"
@@ -225,7 +227,7 @@ class SacrificialIncantation:
 	tribe	= Tribe.OCTOPI
 	cost	= (3, 0)
 	targets	= [ALL_UNITS]
-	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER) # TODO: allow additional cast (return to hand??)
+	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER, 1) # TODO: allow additional cast (return to hand??)
 
 class PotentAfterlife:
 	name	= "Potent Afterlife"
@@ -275,6 +277,10 @@ class TestCard:
 	stats	= (1, 1)
 	#emerge	= Buff(SELF, "Buff_Test")
 
+	targets	= [ALL_UNITS, ALL_UNITS]
+	emerge	= Damage(TARGET, 3), Damage(TARGET[1], 2)
+
+
 	#emerge = Summon(CONTROLLER, "Token_Tentacle"),\
 	#	Exists(ALLIED_DECK) & Summon(CONTROLLER, "Token_Test")
 	#draw = Summon(CONTROLLER, "Token_Test")
@@ -282,4 +288,4 @@ class TestCard:
 	#events = [OWN_TURN_BEGIN.on(Summon(CONTROLLER, "Token_Tentacle"))]
 
 	#update = Refresh(ALLIED_UNITS, buff="TestCard_Buff")
-	update = Refresh(CONTROLLER, buff="TestCard_Buff")
+	#update = Refresh(CONTROLLER, buff="TestCard_Buff")

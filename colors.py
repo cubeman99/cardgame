@@ -39,8 +39,9 @@ class Colors:
 	CYAN			= "\033[38;5;14m"
 	WHITE			= "\033[38;5;15m"
 
-	TEST_PASS		= "\033[38;5;46m"
-	TEST_FAIL		= "\033[38;5;196m"
+	#TEST_PASS		= "\033[38;5;46m"
+	TEST_PASS		= "\033[1;38;5;46m"
+	TEST_FAIL		= "\033[1;38;5;196m"
 	TEST_WARN		= "\033[38;5;11m"
 
 	DEFAULT			= "\033[0m"

@@ -4,6 +4,8 @@ from manager import Manager, CardManager
 from itertools import chain
 from enums import *
 import logic.selector
+import logic.actions as actions
+import logging
 
 MAX_HAND_SIZE = 6
 
@@ -42,7 +44,6 @@ class BaseCard(Entity):
 	def play_targets(self):
 		# Evaluate play targets based on current board state.
 		target_selectors = list(self.data.play_targets)
-		print(self.get_all_actions("corrupt"))
 		if self.get_all_actions("corrupt"):
 			target_selectors = [logic.selector.ALLIED_UNITS] + target_selectors
 		targets = []
@@ -51,10 +52,6 @@ class BaseCard(Entity):
 				entities=self.game.entities,
 				source=self.controller))
 		return targets
-
-	@property
-	def targets(self):
-		return []
 
 	def __hash__(self):
 		return self.id.__hash__()
@@ -81,7 +78,7 @@ class BaseCard(Entity):
 				buff.tick = source.game.tick
 				break
 		else:
-			self.log("Aura from %r buffs %r with %r", source, self, id)
+			logging.action_log.log("Aura from %r buffs %r with %r", source, self, id)
 			buff = source.buff(self, id)
 			buff.tick = source.game.tick
 			source.game.active_aura_buffs.append(buff)
@@ -93,7 +90,7 @@ class BaseCard(Entity):
 				break
 		else:
 			buff = AuraBuff(source, self)
-			self.log("Creating %r", buff)
+			logging.action_log.log("Creating %r", buff)
 			buff.update_tags(tags)
 			self.slots.append(buff)
 			source.game.active_aura_buffs.append(buff)
@@ -167,8 +164,8 @@ class BaseCard(Entity):
 	#def play(self, *args):
 	#	raise NotImplementedError
 
-	def play(self, target=None):
-		self.game.play_card(self, target)
+	def play(self, targets=[]):
+		self.game.play_card(self, targets)
 		return self
 
 	def destroy(self):
@@ -181,7 +178,7 @@ class BaseCard(Entity):
 		#if len(self.controller.hand) >= MAX_HAND_SIZE:
 			#self.discard()
 		#else:
-		self.log("%s draws %r", self.controller, self)
+		logging.action_log.log("%s draws %r", self.controller, self)
 		self.zone = Zone.HAND
 		actions = self.get_actions("draw")
 		self.game.trigger(self, actions, event_args=None)
@@ -240,6 +237,10 @@ class LiveEntity(BaseCard):
 	@property
 	def wisdoms(self):
 		return self.get_all_actions("wisdom")
+
+	@property
+	def corrupts(self):
+		return self.tags.get(GameTag.CORRUPT, 0) == 1
 
 	@property
 	def corrupt_actions(self):
@@ -321,7 +322,7 @@ class Unit(LiveEntity):
 			self.controller.field.append(self)
 
 		if self.zone == Zone.PLAY:
-			self.log("%r is removed from the field", self)
+			logging.action_log.log("%r is removed from the field", self)
 			self.controller.field.remove(self)
 			if self.damage:
 				self.damage = 0
@@ -339,6 +340,12 @@ class Unit(LiveEntity):
 
 	def unflip(self):
 		self.flipped = False
+
+	def attack(self, target):
+		self.game.action_block(
+			source=self.controller,
+			actions=actions.Attack(self, target),
+			type=BlockType.ATTACK)
 
 
 #------------------------------------------------------------------------------
@@ -404,7 +411,7 @@ class Effect(BaseCard):
 		elif zone == Zone.REMOVED_FROM_GAME:
 			if self.zone == zone:
 				# Can happen if a Destroy is queued after a bounce, for example
-				self.logger.warning("Trying to remove %r which is already gone", self)
+				logging.action_log.logger.warning("Trying to remove %r which is already gone", self)
 				return
 			self.owner.buffs.remove(self)
 			if self in self.game.active_aura_buffs:
@@ -412,12 +419,12 @@ class Effect(BaseCard):
 		super()._set_zone(zone)
 
 	def apply(self, target):
-		self.log("Applying %r to %r", self, target)
+		logging.action_log.log("Applying %r to %r", self, target)
 		self.owner = target
 		if hasattr(self.data.scripts, "apply"):
 			self.data.scripts.apply(self, target)
 		if hasattr(self.data.scripts, "max_health"):
-			self.log("%r removes all damage from %r", self, target)
+			logging.action_log.log("%r removes all damage from %r", self, target)
 			target.damage = 0
 		self.zone = Zone.PLAY
 

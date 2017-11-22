@@ -79,14 +79,12 @@ for tag, name in tags:
 
 # Action Block Type
 class BlockType(IntEnum):
-	ATTACK = 1
-	#JOUST = 2
-	POWER = 3
-	TRIGGER = 5
-	DEATHS = 6
-	PLAY = 7
-	#FATIGUE = 8
-	#RITUAL = 9
+	ATTACK	= 1
+	CHOICE	= 2
+	POWER	= 3
+	TRIGGER	= 4
+	DEATHS	= 5
+	PLAY	= 6
 
 # Card Type
 class CardType(IntEnum):

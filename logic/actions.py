@@ -102,7 +102,7 @@ class Action(metaclass=ActionMeta):
 	def __repr__(self):
 		#args = ["%s=%r" % (k, v) for k, v in zip(self.ARGS, self._args)]
 		#return "<Action: %s(%s)>" % (self.__class__.__name__, ", ".join(args))
-		args = ["%s" % (v) for k, v in zip(self.ARGS, self._args)]
+		args = ["%r" % (v) for k, v in zip(self.ARGS, self._args)]
 		return "%s(%s)" % (self.__class__.__name__, ", ".join(args))
 
 	def after(self, *actions):
@@ -226,8 +226,6 @@ class TargetedAction(Action):
 
 	def trigger(self, source):
 		ret = []
-		print("  %r" %(self))
-		print("  event_args = %r" %(str(source.event_args)))
 
 		if self.source is not None:
 			source = self.source.eval(source.game, source)
@@ -248,12 +246,10 @@ class TargetedAction(Action):
 			action_log.log("%r triggering %r targeting %r", source, self, targets)
 			for target in targets:
 				target_args = self.get_target_args(source, target)
-				print("**INVOKE: %r" %(str(target_args)))
 				ret.append(self.invoke(source, target, *target_args))
 
 				for action in self.callback:
 					action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
-					print(target_args)
 					ret += source.game.queue_actions(source, [action], event_args=[target] + target_args)
 
 		#self.resolve_broadcasts()
@@ -371,18 +367,21 @@ class Summon(TargetedAction):
 		return cards
 
 class Play(GameAction):
-	PLAYER = ActionArg()
-	CARD = CardArg()
-	TARGET = ActionArg()
+	PLAYER	= ActionArg()
+	CARD	= CardArg()
+	TARGETS	= ActionArg()
 
-	def invoke(self, source, card, target):
-		#log.info("%s summons %r", target, cards)
+	def invoke(self, source, card, targets):
+		#log.info("%s summons %r", targets, cards)
 		player = source
-		action_log.log("%s plays %r", player, card)
+		if len(targets) == 0:
+			action_log.log("%s plays %r", player, card)
+		else:
+			action_log.log("%s plays %r, targeting %s", player, card, str(targets))
 
 		player.pay_cost(card, card.morale, card.supply)
 
-		card.target = target
+		card.targets = targets
 
 		# Move the card into play
 		card.zone = Zone.PLAY
@@ -398,8 +397,13 @@ class Play(GameAction):
 		elif card.type == CardType.SPELL:
 			emerge_actions = card.get_actions("play")
 
+		if card.corrupts:
+			action_log.log("%r corrupts %r" %(card, targets[0]))
+			source.game.queue_actions(card, [Destroy(targets[0])])
+			emerge_actions = card.get_actions("corrupt") + emerge_actions
+
 		if len(emerge_actions) > 0:
-			source.game.queue_actions(card, [Emerge(card, card.target)])
+			source.game.queue_actions(card, [Emerge(card, card.targets)])
 
 		# Broad cast the "After Play" event
 		self.broadcast(player, EventListener.AFTER, player, card)
@@ -446,7 +450,7 @@ class Aftermath(TargetedAction):
 
 	def invoke(self, source, target):
 		action_log.log("Triggering aftermath for %r", target)
-		print(target.aftermaths)
+
 		for aftermath in target.aftermaths:
 			if callable(aftermath):
 				actions = aftermath(target)
@@ -467,6 +471,8 @@ class Emerge(TargetedAction):
 			emerge_actions = target.get_actions("emerge")
 		elif target.type == CardType.SPELL:
 			emerge_actions = target.get_actions("play")
+		if target.corrupts:
+			emerge_actions = target.get_actions("corrupt") + emerge_actions
 
 		for emerge in emerge_actions:
 			if callable(emerge):

@@ -106,5 +106,6 @@ if __name__=="__main__":
 	a = Summon(SELF, "")
 	a = a.CARD
 	print(isinstance(a, CardArg))
+	print(type(a.C))
 		#.evaluate()
 

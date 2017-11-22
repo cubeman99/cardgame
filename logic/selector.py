@@ -237,12 +237,33 @@ Zone.test = lambda self, entity, *args: entity is not None and self == entity.zo
 #CardClass.test = lambda self, entity, *args: entity is not None and self == getattr(entity, "card_class", CardClass.INVALID)
 
 
+def TARGETS(index):
+	return FuncSelector(lambda entities, source: [source.targets[index]], name="TARGET[%d]" %(index))
+
 # Functions
 SELF			= FuncSelector(lambda entities, source: [source], name="SELF")
 ATTACKER		= FuncSelector(lambda entities, source: [source.attacker], name="ATTACKER")
 DEFENDER		= FuncSelector(lambda entities, source: [source.defender], name="DEFENDER")
-TARGET			= FuncSelector(lambda entities, source: [source.target], name="TARGET")
 SOURCE_OF_DEATH	= FuncSelector(lambda entities, source: [source.source_of_death], name="SOURCE_OF_DEATH")
+
+class Target(Selector):
+
+	def __init__(self, index=0):
+		self.index = index
+
+	def eval(self, entities, source):
+		return source.targets[self.index]
+
+	def __repr__(self):
+		return "TARGET[%d]" %(self.index)
+
+	def __getitem__(self, index):
+		return FuncSelector(lambda entities, source:
+				[source.targets[index]],
+			name="TARGET[%d]" %(index))
+
+TARGET			= Target(0)
+CORRUPTED_UNIT	= Target(0)
 
 # Keywords
 INSPIRE     = EnumSelector(GameTag.INSPIRE)
