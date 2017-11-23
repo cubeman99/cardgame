@@ -14,15 +14,19 @@ class Manager(object):
 		"""Get the value of a tag. Raises KeyError if the tag is not defined """
 		if self.map.get(tag, None) != None:
 			return getattr(self.obj, self.map[tag], 0)
-		else:
+		elif self.obj.data != None:
 			return self.obj.data.tags[tag]
+		else:
+			return None
 
 	def get(self, tag, default=None):
 		"""Get the value of a tag or return the default if it is not defined"""
 		if tag in self.map:
 			return self[tag]
-		else:
+		elif self.obj.data != None:
 			return self.obj.data.tags.get(tag, default)
+		else:
+			return default
 
 	def __setitem__(self, tag, value):
 		"""Set the value of a tag"""

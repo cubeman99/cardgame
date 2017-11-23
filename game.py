@@ -213,11 +213,13 @@ class Game(Entity):
 		self.action_end(type, source)
 		return ret
 
-	def queue_actions(self, source, actions, event_args=None):
+	def queue_actions(self, source, actions, event_args=None, event_outputs=None):
 		if not isinstance(actions, list):
 			actions = [actions]
 		source.event_args = event_args
+		source.event_outputs = event_outputs
 		result = self.trigger_actions(source, actions)
+		source.event_outputs = None
 		source.event_args = None
 		return result
 

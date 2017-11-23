@@ -119,12 +119,12 @@ class Player(LiveEntity):
 		#self.game.cheat_action(self, )
 		game.queue_actions(self, actions.Summon(self, cards))
 
-	def give(self, card):
+	def give(self, card, zone=Zone.HAND):
 		if isinstance(card, str):
-			card = self.card(card, zone=Zone.HAND)
+			card = self.card(card, zone=zone)
 		else:
 			card.controller = self
-			card.zone = Zone.HAND
+			card.zone = zone
 		return card
 
 	def play(self, card):

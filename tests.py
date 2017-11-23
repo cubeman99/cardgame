@@ -81,20 +81,17 @@ class PlayTargets(pyunit.TestCase):
 
 	def test_play_target(self):
 		game = Game()
-		#card = game.player1.give("AgileSquirmer")
-		card = game.player1.give("TestCard")
+		card = game.player1.give("AgileSquirmer")
 		target = game.player2.give("SunkenGoliath").play()
 		target2 = game.player2.give("SunkenGoliath").play()
 
 		self.expect_eq(card.zone, Zone.HAND)
 		self.expect_eq(target.damage, 0)
-		self.expect_eq(target2.damage, 0)
 
 		card.play(targets=[target, target2])
 
 		self.expect_eq(card.zone, Zone.PLAY)
 		self.expect_eq(target.damage, 3)
-		self.expect_eq(target2.damage, 2)
 
 
 	def test_corrupt_with_additional_target(self):
@@ -202,12 +199,84 @@ class Serialization(pyunit.TestCase):
 
 		self.expect_eq(str(state2), str(state1))
 
+class Choosing(pyunit.TestCase):
 
+	def test_choose_action(self):
+		game = Game()
+
+		# Aftermath: destroy an enemy unit with less attack
+		card = game.player1.give("SunkenGoliath").play()
+
+		valid_targets = [
+			game.player2.give("OctopiExile", Zone.PLAY),		# 2 attack
+			game.player2.give("UnstableLurker", Zone.PLAY),		# 3 attack
+		]
+		invalid_targets = [
+			game.player2.give("SunkenGoliath", Zone.PLAY),		# 4 attack
+			game.player2.give("RageheartScreamer", Zone.PLAY),	# 5 attack
+			game.player2.give("WarpackHowler", Zone.PLAY),		# 6 attack (after swarm)
+		]
+
+		attacker = game.player2.give("OctopiExile", Zone.PLAY)
+		attacker.attack(card)
+		attacker = game.player2.give("OctopiExile", Zone.PLAY)
+		attacker.attack(card)
+		attacker = game.player2.give("OctopiExile", Zone.PLAY)
+		attacker.attack(card)
+		attacker = game.player2.give("OctopiExile", Zone.PLAY)
+		attacker.attack(card)
+
+		choice = game.player1.choice.cards[1]
+		choices = game.player1.choice.cards
+
+		self.expect(valid_targets[0] in choices)
+		self.expect(valid_targets[1] in choices)
+		self.expect(invalid_targets[0] not in choices)
+		self.expect(invalid_targets[1] not in choices)
+		self.expect(invalid_targets[2] not in choices)
+		self.expect(card not in choices)
+
+		self.expect_false(choice.dead)
+		game.player1.choice.choose(choice)
+		self.expect_true(choice.dead)
+
+class Mechanics(pyunit.TestCase):
+
+	def test_heroic(self):
+		game = Game()
+
+		# Heroic: +5/+4 inspire
+		card = game.player1.give("WarlordHeir").play()
+		self.expect_eq(card.power, 5)
+		self.expect_eq(card.health, 5)
+		self.expect_eq(card.inspire, 1)
+		self.expect_eq(len(card.buffs), 1)
+		self.expect_eq(card.buffs[0].owner, card)
+		self.expect_eq(card.buffs[0].source, card)
+
+		game.player1.give("WarlordHeir").play()
+		self.expect_eq(card.power, 0)
+		self.expect_eq(card.health, 1)
+		self.expect_eq(card.inspire, 0)
+		self.expect_eq(len(card.buffs), 0)
+
+		# Allied Units gain +2/+1
+		game.player1.give("Overrun").play()
+		self.expect_eq(card.power, 2)
+		self.expect_eq(card.health, 2)
+		self.expect_eq(card.inspire, 0)
+		self.expect_eq(len(card.buffs), 1)
+
+	def test_swarm(self):
+		pass
+
+	def test_inspire(self):
+		pass
 
 if __name__=="__main__":
 	cards.db.initialize()
 
-	logging.action_log.disable()
+	#logging.action_log.disable()
 	pyunit.run_all_tests(globals())
 
 

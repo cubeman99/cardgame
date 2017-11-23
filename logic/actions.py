@@ -66,6 +66,8 @@ class ActionMeta(type):
 		return OrderedDict()
 
 class ActionArg(LazyValue):
+	"""Input parameter that is evaluated upon invoking the action."""
+
 	def _setup(self, index, name, owner):
 		self.index = index
 		self.name = name
@@ -75,6 +77,11 @@ class ActionArg(LazyValue):
 		return "<%s.%s>" % (self.owner.__name__, self.name)
 
 	def evaluate(self, source):
+		"""Returns the value of this argument that was passed in to the
+		previous action, when referenced as Action.FOO from a predicate action.
+		Example:
+		Summon(CONTROLLER, "Card").then(Damage(Summon.CARD, 2))"""
+
 		# This is used when an event listener triggers and the callback
 		# Action has arguments of the type Action.FOO
 		# XXX we rely on source.event_args to be set, but it's very racey.
@@ -106,9 +113,17 @@ class Action(metaclass=ActionMeta):
 		return "%s(%s)" % (self.__class__.__name__, ", ".join(args))
 
 	def after(self, *actions):
+		"""
+		Return an event listener that triggers after an action matching this
+		one is triggered
+		"""
 		return EventListener(self, actions, EventListener.AFTER)
 
 	def on(self, *actions):
+		"""
+		Return an event listener that triggers during an action matching this
+		one is triggered
+		"""
 		return EventListener(self, actions, EventListener.ON)
 
 	def then(self, *args):
@@ -151,6 +166,10 @@ class Action(metaclass=ActionMeta):
 		return self._args
 
 	def matches(self, source, args):
+		"""
+		Check if the arguments from this action match the arguments from
+		another action.
+		"""
 		for arg, match in zip(args, self._args):
 			if match is None:
 				# Allow matching Action(None, None, z) to Action(x, y, z)
@@ -174,6 +193,11 @@ class GameAction(Action):
 		args = self.get_args(source)
 		self.invoke(source, *args)
 
+		for action in self.callback:
+			action_log.log("%r queues up callback %r", self, action)
+			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
+			source.game.queue_actions(source, [action], event_args=args)
+
 
 class TargetedAction(Action):
 	TARGET = ActionArg()
@@ -191,11 +215,11 @@ class TargetedAction(Action):
 		self.times = value
 		return self
 
-	def eval(self, selector, source):
+	"""def eval(self, selector, source):
 		if isinstance(selector, Entity):
 			return [selector]
 		else:
-			return selector.eval(source.game, source)
+			return selector.eval(source.game, source)"""
 
 	def get_target_args(self, source, target):
 		ret = []
@@ -459,7 +483,7 @@ class Aftermath(TargetedAction):
 			actions = aftermath
 			source.game.queue_actions(target, actions)
 
-# Corrupt = Triggered upon playing the card.
+# Emerge = Triggered upon playing the card.
 class Emerge(TargetedAction):
 	TARGET = ActionArg()
 
@@ -556,41 +580,36 @@ class ExactCopy(Copy):
 	An exact copy will include buffs and all tags.
 	"""
 	def copy(self, source, entity):
-		ret = super().copy(source, entity)
+		copy = super().copy(source, entity)
 		#for k in entity.silenceable_attributes:
 		#	v = getattr(entity, k)
-		#	setattr(ret, k, v)
-		#ret.silenced = entity.silenced
-		ret.damage = entity.damage
+		#	setattr(copy, k, v)
+		copy.damage = entity.damage
 		#for buff in entity.buffs:
 		#	# Recreate the buff stack
-		#	entity.buff(ret, buff.id)
-		return ret
+		#	entity.buff(copy, buff.id)
+		return copy
 
 
 class Buff(TargetedAction):
 	"""
-	Buff character targets with Enchantment \a id
+	Buff character targets with Effect \a id
 	NOTE: Any Card can buff any other Card. The controller of the
 	Card that buffs the target becomes the controller of the buff.
 	"""
 	TARGET = ActionArg()
-	BUFF = ActionArg()
+	BUFF = CardArg()
 
-	def get_target_args(self, source, target):
-		buff = self._args[1]
-		buff = source.controller.card(buff)
-		buff.source = source
-		return [buff]
-
-	def invoke(self, source, target, buff):
-		kwargs = self._kwargs.copy()
-		for k, v in kwargs.items():
-			if isinstance(v, LazyValue):
-				v = v.evaluate(source)
-				print("Evaluated buff arg %s to %r" %(k, v))
-			setattr(buff, k, v)
-		return buff.apply(target)
+	def invoke(self, source, target, buffs):
+		ret = []
+		for buff in buffs:
+			kwargs = self._kwargs.copy()
+			for k, v in kwargs.items():
+				if isinstance(v, LazyValue):
+					v = v.evaluate(source)
+				setattr(buff, k, v)
+			ret.append(buff.apply(target))
+		return ret
 
 
 class GiveMorale(TargetedAction):
@@ -633,5 +652,86 @@ class Refresh:
 	def __repr__(self):
 		return "Refresh(%r, %r, %r)" % (self.selector, self.tags or {}, self.buff or "")
 
+
+
+class ActionOutput(LazyValue):
+	def __repr__(self):
+		return "<%s>" %(self.__class__.__name__)
+		#return "<%s.%s>" % (self.owner.__name__, self.name)
+
+	def evaluate(self, source):
+		#assert source.event_args
+		#return source.event_outputs[self.index]
+		return source.event_outputs[0]
+
+class Choose(GameAction):
+	PLAYER = ActionArg()
+	CARDS = ActionArg()
+	CHOICE = ActionOutput()
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.choice_callback = ()
+
+	def then(self, *args):
+		"""
+		Create a callback containing an action queue, called upon the
+		action's trigger with the action's arguments available.
+		"""
+		# Create a special callback that triggers when the choice is complete.
+		ret = self.__class__(*self._args, **self._kwargs)
+		ret.choice_callback = args
+		ret.times = self.times
+		return ret
+
+	def get_args(self, source):
+		# Evaluate the player argument.
+		player = self._args[0]
+		if isinstance(player, Selector):
+			player = player.eval(source.game.players, source)
+			assert len(player) == 1
+			player = player[0]
+
+		# Evaluate the choice list argument.
+		cards = self._args[1]
+		if isinstance(cards, Selector):
+			cards = cards.eval(source.game, source)
+		elif isinstance(cards, LazyValue):
+			cards = cards.evaluate(source)
+
+		# TODO: create a card from ID
+		#for card in cards:
+			#if isinstance(card, str):
+				#pass
+			#else:
+				# Cards in the choice must be set aside.
+				#card.zone = Zone.SET_ASIDE
+
+		action_log.log("%r begins choice between %r" %(player, cards))
+		return player, cards
+
+	def invoke(self, source, player, cards):
+		self.source = source
+		self.player = player
+		self.cards = cards
+		self.min_count = 1
+		self.max_count = 1
+		self.player.choice = self # The player enters a choosing state.
+
+	def choose(self, card):
+		if card not in self.cards:
+			raise InvalidAction("%r is not a valid choice (one of %r)" % (card, self.cards))
+		action_log.log("%r chooses %r" %(self.player, card))
+		for _card in self.cards:
+			if _card is card:
+				pass
+			else:
+				_card.discard()
+		self.player.choice = None
+
+		for action in self.choice_callback:
+			action_log.log("Choice queues up callback %r", action)
+			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
+			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[card])
 
 

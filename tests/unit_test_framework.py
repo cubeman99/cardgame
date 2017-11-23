@@ -91,6 +91,16 @@ class TestCase:
 			color_print("  Actual: %r\n" %(condition))
 			color_print("Expected: %r\n" %(True))
 
+	def expect_true(self, condition):
+		if not self.test.expect(condition):
+			color_print("  Actual: %r\n" %(condition))
+			color_print("Expected: %r\n" %(True))
+
+	def expect_false(self, condition):
+		if not self.test.expect(not condition):
+			color_print("  Actual: %r\n" %(condition))
+			color_print("Expected: %r\n" %(False))
+
 	def expect_eq(self, actual, expected):
 		if not self.test.expect(actual == expected):
 			color_print("  Actual: %r\n" %(actual))

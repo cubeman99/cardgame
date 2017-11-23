@@ -138,7 +138,8 @@ class SunkenGoliath:
 	tribe = Tribe.OCTOPI
 	cost	= (3, 0)
 	stats	= (4, 7)
-	#aftermath = Destroy(ALL_UNITS + (ATTACK < ))
+	aftermath = Choose(CONTROLLER, ENEMY_UNITS & (POWER < POWER(SELF))).then(
+		Destroy(Choose.CHOICE))
 
 class UnstableLurker:
 	name	= "Sunken Goliath"
@@ -277,8 +278,10 @@ class TestCard:
 	stats	= (1, 1)
 	#emerge	= Buff(SELF, "Buff_Test")
 
-	targets	= [ALL_UNITS, ALL_UNITS]
-	emerge	= Damage(TARGET, 3), Damage(TARGET[1], 2)
+	#targets	= [ALL_UNITS, ALL_UNITS]
+	#emerge	= Damage(TARGET, 3), Damage(TARGET[1], 2)
+
+	aftermath = Choose(ENEMY_UNITS)#.then(Damage(Choose.CHOICE, 2))
 
 
 	#emerge = Summon(CONTROLLER, "Token_Tentacle"),\

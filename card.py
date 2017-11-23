@@ -357,6 +357,10 @@ class Spell(BaseCard):
 		#self.receives_double_spelldamage_bonus = False
 		super().__init__(data)
 
+	@property
+	def corrupts(self):
+		return self.tags.get(GameTag.CORRUPT, 0) == 1
+
 	#def get_damage(self, amount, target):
 	#	amount = super().get_damage(amount, target)
 	#	if not self.immune_to_spellpower:
