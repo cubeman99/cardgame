@@ -4,7 +4,8 @@ import threading
 from colors import *
 from messages import *
 from enums import *
-from client.entities import Entity, Game, Player, Card, Option
+from client.entities import Entity, Game, Player, Card, Option, Choice
+from utils import CardList
 import card_details
 import traceback
 import json
@@ -33,7 +34,7 @@ class ReceiveThread(threading.Thread):
 			#try:
 			self.client.receive_data(data)
 			self.client.print_game_state()
-			color_print("{green}Your action:{} ")
+
 			#except Exception as e:
 			#traceback.print_exc(file=sys.stdout)
 			#color_print("Exception: {yellow}%r{}" %(e))
@@ -148,6 +149,23 @@ class Client:
 
 	def parse_action(self, action, args):
 		msg = Message(ClientMessage.INVALID)
+
+
+		if self.game.choice != None:
+			try:
+				choice = int(action)
+			except:
+				print("'%s' is not a valid choice" %(action))
+				return None
+			if choice not in self.game.choice.cards:
+				print("'%s' is not a valid choice" %(action))
+				return None
+			return {
+				"Type": "Choose",
+				"Choose": {
+					"EntityID": choice,
+				}
+			}
 
 		# Play a card
 		# Usage: play CARD TODO: targets
@@ -368,12 +386,26 @@ class Client:
 			elif type == "Options":
 				options = thing["Options"]
 				self.game.options = []
+				self.game.choice = None
 				for option in options:
 					option_type = OptionType(option["Type"])
 					option_args = option.get("MainOption", {})
 					self.game.options.append(Option(
 						type=option_type,
 						args=option_args))
+
+			elif type == "Choices":
+				choice = thing["Choices"]
+				source_id = choice["SourceID"]
+				player_id = choice["SourceID"]
+				entities = choice["Entities"]
+				choice_type = choice["ChoiceType"]
+				self.game.options = []
+				self.game.choice = Choice(
+					type=choice_type,
+					player_id=player_id,
+					source_id=source_id,
+					cards=entities)
 
 	def print_game_state(self):
 		max_name_length = 0
@@ -401,6 +433,20 @@ class Client:
 		print("")
 		print("Turn %d: %s step for %s" %(self.game.turn_number,
 			Step(self.game.step).name, self.game.step_player))
+
+		if self.game.choice != None:
+			choice = self.game.choice
+			cards = CardList()
+			source = self.game.find_entity_by_id(choice.source_id)
+			for card in choice.cards:
+				cards.append(self.game.find_entity_by_id(card))
+			print("")
+			self.print_card_list(cards, "Your choices for %s:" %(source.name))
+			print("")
+			color_print("{green}Your choice:{} ")
+		else:
+			print("")
+			color_print("{green}Your action:{} ")
 
 	def print_player_info(self, player, name):
 		deck_size = len([card for card in player.deck])

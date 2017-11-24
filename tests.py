@@ -5,7 +5,7 @@ from game import Game
 from enums import *
 from player import Player
 import cards
-import logic.actions as actions
+from logic.actions import *
 from logic.selector import *
 from utils import *
 from colors import *
@@ -22,6 +22,9 @@ import tests.unit_test_framework as pyunit
 class CardTests(pyunit.TestCase):
 
 	def test_infested_whale(self):
+		"""
+		Aftermath: Summon 2 1/1 Tentacles
+		"""
 		game = Game()
 		whale = game.player1.give("InfestedWhale")
 		attacker = game.player2.give("SunkenGoliath")
@@ -36,6 +39,10 @@ class CardTests(pyunit.TestCase):
 		self.expect_eq(whale.zone, Zone.DISCARD)
 
 	def test_warpack_chieftan(self):
+		"""
+		When this Unit attacks, put a 1/1 Aard Whelp into play attacking the
+		opponent.
+		"""
 		game = Game()
 		chief = game.player1.give("WarpackChieftan")
 		chief.play()
@@ -60,6 +67,9 @@ class CardTests(pyunit.TestCase):
 
 
 	def test_necrolight_soldier(self):
+		"""
+		Corrupt: Deal 2 damage to an enemy unit
+		"""
 		game = Game()
 		target1 = game.player1.give("InfestedWhale").play()
 		target2 = game.player2.give("InfestedWhale").play()
@@ -75,6 +85,35 @@ class CardTests(pyunit.TestCase):
 		self.expect_eq(len(game.player1.field), 3)
 		self.expect_eq(len(game.player2.field), 1)
 		self.expect_eq(target2.damage, 2)
+
+	def test_necrolight_follower(self):
+		"""
+		Aftermath: return a dead unit to your hand.
+		"""
+		game = Game()
+		card = game.player1.give("NecrolightFollower").play()
+		valid_choices = [
+			game.player1.give("NecrolightFollower", Zone.DISCARD),
+			game.player1.give("NecrolightFollower", Zone.DISCARD),
+			game.player1.give("NecrolightFollower", Zone.DISCARD),
+		]
+		invalid_choices = [
+			game.player1.give("NecrolightFollower", Zone.PLAY),
+			game.player1.give("NecrolightFollower", Zone.HAND),
+			game.player2.give("NecrolightFollower", Zone.DISCARD),
+		]
+		game.queue_actions(game.player1, [Destroy(card)])
+		game.process_deaths()
+
+		self.expect_true(game.player1.choice != None)
+		self.expect_eq(len(game.player1.choice.cards), 3)
+		self.expect_true(valid_choices[0] in game.player1.choice.cards)
+		self.expect_true(valid_choices[1] in game.player1.choice.cards)
+		self.expect_true(valid_choices[2] in game.player1.choice.cards)
+		self.expect_false(invalid_choices[0] in game.player1.choice.cards)
+		self.expect_false(invalid_choices[1] in game.player1.choice.cards)
+		self.expect_false(invalid_choices[2] in game.player1.choice.cards)
+		self.expect_false(card in game.player1.choice.cards)
 
 
 class PlayTargets(pyunit.TestCase):
@@ -239,6 +278,26 @@ class Choosing(pyunit.TestCase):
 		self.expect_false(choice.dead)
 		game.player1.choice.choose(choice)
 		self.expect_true(choice.dead)
+
+class Actions(pyunit.TestCase):
+	def test_bounce_from_field(self):
+		game = Game()
+		card = game.player1.give("WarlordHeir").play()
+		self.expect_eq(card.zone, Zone.PLAY)
+		self.expect_true(card in game.player1.field)
+		game.queue_actions(game.player1, [Bounce(card)])
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_true(card in game.player1.hand)
+
+	def test_bounce_from_discard(self):
+		game = Game()
+		card = game.player1.give("WarlordHeir", zone=Zone.DISCARD)
+		self.expect_eq(card.zone, Zone.DISCARD)
+		self.expect_false(card in game.player1.hand)
+		game.queue_actions(game.player1, [Bounce(card)])
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_true(card in game.player1.hand)
+
 
 class Mechanics(pyunit.TestCase):
 

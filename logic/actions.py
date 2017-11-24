@@ -285,6 +285,9 @@ class TargetedAction(Action):
 #==============================================================================
 
 class Attack(TargetedAction):
+	"""
+	Creates an attack from \a source to \a target.
+	"""
 	ATTACKER = ActionArg()
 	DEFENDER = ActionArg()
 
@@ -322,6 +325,9 @@ class Attack(TargetedAction):
 		defender.attacker = None
 
 class Hit(TargetedAction):
+	"""
+	Cause a hit on \a targets for \a amount.
+	"""
 	TARGET = ActionArg()
 	AMOUNT = IntArg()
 
@@ -330,6 +336,9 @@ class Hit(TargetedAction):
 		source.game.queue_actions(source, [Damage(target, amount)])
 
 class Damage(TargetedAction):
+	"""
+	Damage \a targets by \a amount. The event will not broadcast if the final amount is 0.
+	"""
 	TARGET = ActionArg()
 	AMOUNT = IntArg()
 
@@ -338,6 +347,10 @@ class Damage(TargetedAction):
 		target.hit(source, amount)
 
 class Destroy(TargetedAction):
+	"""
+	Destroy \a targets.
+	"""
+
 	def invoke(self, source, target):
 		if target.delayed_destruction:
 			#  If the card is in PLAY, it is instead scheduled to be destroyed
@@ -360,6 +373,9 @@ class Death(GameAction):
 			source.game.queue_actions(source, [Aftermath(target)])
 
 class Summon(TargetedAction):
+	"""
+	Summons \a card for each target.
+	"""
 	TARGET = ActionArg()
 	CARD = CardArg()
 
@@ -391,6 +407,9 @@ class Summon(TargetedAction):
 		return cards
 
 class Play(GameAction):
+	"""
+	Plays the card \a card on the targets \a targets if specified.
+	"""
 	PLAYER	= ActionArg()
 	CARD	= CardArg()
 	TARGETS	= ActionArg()
@@ -434,6 +453,9 @@ class Play(GameAction):
 
 
 class Draw(TargetedAction):
+	"""
+	Draws one card for the targets from the top of their deck.
+	"""
 	TARGET = ActionArg()
 	CARD = CardArg()
 
@@ -539,6 +561,9 @@ class Corrupt(TargetedAction):
 
 # Inspire = Gain X Morale when this unit attacks a player
 class Inspire(TargetedAction):
+	"""
+	Trigger inspire for the target.
+	"""
 	TARGET = ActionArg()
 
 	def invoke(self, source, target):
@@ -614,7 +639,8 @@ class Buff(TargetedAction):
 
 class GiveMorale(TargetedAction):
 	"""
-	Give \a morale to a player.
+	Make player targets gain \a amount morale.
+	Note: \a amount can be negative to cause them to lose mana.
 	"""
 	TARGET = ActionArg()
 	AMOUNT = IntArg()
@@ -623,7 +649,17 @@ class GiveMorale(TargetedAction):
 		print("Giving %d morale to %r" %(amount, target))
 		target.morale += amount
 
-
+class Bounce(TargetedAction):
+	"""
+	Move a unit on the field back into their controller's hand.
+	"""
+	def invoke(self, source, target):
+		if len(target.controller.hand) >= target.controller.max_hand_size:
+			action_log.log("%r is bounced to a full hand and gets destroyed", target)
+			return source.game.queue_actions(source, [Destroy(target)])
+		else:
+			action_log.log("%r is bounced back to %s's hand", target, target.controller)
+			target.zone = Zone.HAND
 
 
 class Refresh:
@@ -665,6 +701,10 @@ class ActionOutput(LazyValue):
 		return source.event_outputs[0]
 
 class Choose(GameAction):
+	"""
+	Initiate a choice for \a player, provided a set of \a cards to choose from.
+	This will halt the action queue until the player makes their choice.
+	"""
 	PLAYER = ActionArg()
 	CARDS = ActionArg()
 	CHOICE = ActionOutput()
@@ -672,6 +712,7 @@ class Choose(GameAction):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.choice_callback = ()
+		self.type = ChoiceType.GENERAL
 
 	def then(self, *args):
 		"""
@@ -713,12 +754,18 @@ class Choose(GameAction):
 	def invoke(self, source, player, cards):
 		self.source = source
 		self.player = player
+		self.source.game.choosing_player = player
 		self.cards = cards
 		self.min_count = 1
 		self.max_count = 1
+		self.source.game.choice = self
 		self.player.choice = self # The player enters a choosing state.
 
 	def choose(self, card):
+		"""
+		Perform the choice. This will trigger any followup actions, plus the
+		rest of the action queue.
+		"""
 		if card not in self.cards:
 			raise InvalidAction("%r is not a valid choice (one of %r)" % (card, self.cards))
 		action_log.log("%r chooses %r" %(self.player, card))
@@ -727,11 +774,12 @@ class Choose(GameAction):
 				pass
 			else:
 				_card.discard()
+
 		self.player.choice = None
+		self.source.game.choice = None
 
 		for action in self.choice_callback:
 			action_log.log("Choice queues up callback %r", action)
 			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
 			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[card])
-
 

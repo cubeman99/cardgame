@@ -31,6 +31,7 @@ class Player(LiveEntity):
 		self._zone = Zone.PLAY
 		self.last_card_played = None
 		self.controller = self
+		self.choice = None
 
 	@property
 	def game(self):

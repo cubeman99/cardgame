@@ -47,23 +47,42 @@ class ServerManager:
 			state[tag] = value
 
 	def refresh_options(self):
-		print("Refreshing options...")
 		self.options = []
 
-		#if self.game.current_player.choice:
-		#	return self.refresh_choices()
+		if self.player.choice:
+			return self.refresh_choices()
 
-		if self.game.choosing_player == self.player:
-			self.options.append({"Type": OptionType.DONE})
-			for entity in self.game.choosing_player.actionable_entities:
-				for option in self.get_options(entity):
-					self.options.append(option)
+		print("Refreshing options...")
+
+		self.options.append({"Type": OptionType.DONE})
+		for entity in self.game.choosing_player.actionable_entities:
+			for option in self.get_options(entity):
+				self.options.append(option)
 
 		payload = {
 			"Type": "Options",
 			"Options": self.options,
 		}
 		self.queued_data.append(payload)
+
+	def refresh_choices(self):
+		print("Refreshing choices...")
+		choice = self.player.choice
+		self.choices = {
+			"ChoiceType": choice.type,
+			"Entities": [e.entity_id for e in choice.cards],
+			"PlayerID": self.player.entity_id,
+			"SourceID": choice.source.entity_id,
+			#"CountMin": choice.min_count,
+			#"CountMax": choice.max_count,
+		}
+		payload = {
+			"Type": "Choices",
+			"Choices": self.choices
+		}
+		self.queued_data.append(payload)
+
+
 
 	def new_entity(self, entity):
 		self.add_to_state(entity)
@@ -327,6 +346,7 @@ class Server:
 		#self.game.player2.give("ElegalthsChosen")
 		self.game.player2.give("Overrun")
 
+		goliath = self.game.player1.give("SunkenGoliath")
 		self.game.player1.give("WarlordHeir")
 		self.game.player1.give("RipperPack")
 		self.game.player1.give("BonehoarderBrute")
@@ -375,6 +395,8 @@ class Server:
 		self.game.player1.supply += 100
 		self.game.player2.morale += 100
 		self.game.player2.supply += 100
+
+		goliath.damage = 6
 
 		deck_size = len([card for card in self.game.player1.deck])
 		print("Deck size = %d" %(deck_size))
@@ -494,6 +516,19 @@ class Server:
 			print("Playing %s" %(card.name))
 			card.play(targets=targets)
 			return True
+
+		elif type == "Choose":
+			data = message.get("Choose")
+			entity_id = data["EntityID"]
+			if player.choice == None:
+				print("There is no choice for %s" %(player))
+				return False
+			for card in player.choice.cards:
+				if card.entity_id == entity_id:
+					print("%r chooses %r" %(player, card))
+					player.choice.choose(card)
+					return True
+			return False
 
 		elif type == "Attack":
 			data = message.get("Attack")

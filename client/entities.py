@@ -1,4 +1,4 @@
-from enums import CardType, GameTag, Step, Zone, Type, OptionType
+from enums import CardType, GameTag, Step, Zone, Type, OptionType, ChoiceType
 import card_details
 
 PLAYABLE_CARD_TYPES = [
@@ -98,7 +98,28 @@ class Entity:
 			self._initial_controller = self.tags.get(GameTag.CONTROLLER, value)
 		self.tags[tag] = value
 
+class Choice:
+	"""
+	Choice
+	"""
+	def __init__(self, type, player_id, source_id, cards):
+		self.type = ChoiceType(type)
+		self.player_id = player_id
+		self.source_id = source_id
+		self.cards = list(cards)
+
+	def __repr__(self):
+		return "Choice(%s, %s, %s, %s)" %(
+			source_id, player_id, type, str(cards))
+
+	def __str__(self):
+		return "Choice(%s, %s, %s, %s)" %(
+			source_id, player_id, type, str(cards))
+
 class Option:
+	"""
+	Option
+	"""
 	def __init__(self, type, args):
 		self.type = OptionType(type)
 		self.targets = args.get("Targets", [])
@@ -143,6 +164,7 @@ class Game(Entity):
 		self.entities = []
 		self.initial_entities = []
 		self.options = []
+		self.choice = None
 		#self.initial_state = State.INVALID
 		self.initial_step = Step.INVALID
 

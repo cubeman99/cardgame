@@ -5,6 +5,7 @@ from enums import *
 from typing import Any, Union, List, Callable, Iterable, Optional, Set
 from logic.lazynum import *
 from entity import BaseEntity
+import inspect
 
 # Type aliases
 SelectorLike = Union["Selector", LazyValue]
@@ -13,6 +14,22 @@ BinaryOp = Callable[[Any, Any], bool]
 
 
 class Selector:
+	name = None
+
+	def __repr__(self):
+		return self.get_name()
+
+	def get_name(self):
+		if self.name:
+			return self.name
+		return self.eval_name()
+
+	def eval_name(self):
+		if self.name:
+			return self.name
+		return "UNKNOWN"
+
+
 	"""
 	Selectors take entity lists and returns a sub-list. Selectors
 	are closed under addition, subtraction, complementation, and ORing.
@@ -63,14 +80,12 @@ class Selector:
 class EnumSelector(Selector):
 	def __init__(self, tag_enum=None):
 		self.tag_enum = tag_enum
+		self.name = "<%s>" %(self.tag_enum.name)
 
 	def eval(self, entities, source):
 		if not self.tag_enum or not hasattr(self.tag_enum, "test"):
 			raise RuntimeError("Unsupported enum type {}".format(str(self.tag_enum)))
 		return [e for e in entities if self.tag_enum.test(e, source)]
-
-	def __repr__(self):
-		return "<%s>" % (self.tag_enum.name)
 
 class SelectorEntityValue(metaclass=ABCMeta):
 	"""
@@ -115,7 +130,7 @@ class ComparisonSelector(Selector):
 		return [e for e in entities if
 				self.op(self.left.value(e, source), right_value)]
 
-	def __repr__(self):
+	def eval_name(self):
 		if self.op.__name__ == "eq":
 			infix = "=="
 		elif self.op.__name__ == "gt":
@@ -130,7 +145,7 @@ class ComparisonSelector(Selector):
 			infix = "!="
 		else:
 			infix = "UNKNOWN_OP"
-		return "(%s) %s (%s)" % (self.left, infix, self.right)
+		return "(%s %s %s)" % (self.left, infix, self.right)
 
 class SetOpSelector(Selector):
 	def __init__(self, op: Callable, left: Selector, right: SelectorLike):
@@ -152,25 +167,32 @@ class SetOpSelector(Selector):
 		# Preserve input ordering and multiplicity
 		return [e for e in entities if e.entity_id in result_entity_ids]
 
-	def __repr__(self):
+	def eval_name(self):
 		name = self.op.__name__
 		if name == "and_":
-			infix = "+"
-			infix = "and"
+			infix = "&"
 		elif name == "or_":
 			infix = "|"
-			infix = "or"
 		elif name == "sub":
 			infix = "-"
-			infix = "and not"
 		else:
 			infix = "UNKNOWN_OP"
 
-		return "(%r) %s (%r)" % (self.left, infix, self.right)
+		return "(%r %s %r)" % (self.left, infix, self.right)
 
 class AttrValue(SelectorEntityValue):
 	def __init__(self, tag):
 		self.tag = tag
+		#if isinstance(self.tag, str):
+		#	self.name = "%s" %(self.tag)
+		#else:
+		#	self.name = "%s" %(self.tag.name)
+
+	def __repr__(self):
+		if isinstance(self.tag, str):
+			return "%s" %(self.tag)
+		else:
+			return "%s" %(self.tag.name)
 
 	#def eval(self, source):
 	#	return getattr(source, self.tag)
@@ -184,19 +206,10 @@ class AttrValue(SelectorEntityValue):
 		"""Convenience function to support uses like ARMOR(SELF)"""
 		return Attr(selector, self.tag)
 
-	def __repr__(self):
-		if isinstance(self.tag, str):
-			return "%s" % (self.tag)
-		else:
-			return "%s" % (self.tag.name)
-
 
 class Controller(LazyValue):
 	def __init__(self):
-		pass
-
-	def __repr__(self):
-		return "Controller"
+		self.name = "Controller"
 
 	def _get_entity_attr(self, entity):
 		return entity.controller
@@ -208,11 +221,14 @@ class Controller(LazyValue):
 		assert len(entities) == 1
 		return self._get_entity_attr(entities[0])
 
+	def __repr__(self):
+		return "Opponent"
+
 
 class Opponent(Controller):
 	def _get_entity_attr(self, entity):
 		return entity.controller.opponent
-
+		self.name = "Opponent"
 	def __repr__(self):
 		return "Opponent"
 
@@ -221,9 +237,6 @@ class FuncSelector(Selector):
 		"""func(entities, source) returns the results"""
 		self.func = func
 		self.name = name if name else "<%s>" %(self.__class__.__name__)
-
-	def __repr__(self):
-		return self.name
 
 	def eval(self, entities, source):
 		return self.func(entities, source)
@@ -250,12 +263,10 @@ class Target(Selector):
 
 	def __init__(self, index=0):
 		self.index = index
+		self.name = "TARGET[%d]" %(self.index)
 
 	def eval(self, entities, source):
 		return source.targets[self.index]
-
-	def __repr__(self):
-		return "TARGET[%d]" %(self.index)
 
 	def __getitem__(self, index):
 		return FuncSelector(lambda entities, source:
@@ -290,17 +301,16 @@ MORALE			= AttrValue(GameTag.MORALE)
 SUPPLY			= AttrValue(GameTag.SUPPLY)
 INSPIRE			= AttrValue(GameTag.INSPIRE)
 
-
 #COST = AttrValue(GameTag.COST)
 #DAMAGE = AttrValue(GameTag.DAMAGE)
 #MANA = AttrValue(GameTag.RESOURCES)
 #USED_MANA = AttrValue(GameTag.RESOURCES_USED)
 #NUM_ATTACKS_THIS_TURN = AttrValue(GameTag.NUM_ATTACKS_THIS_TURN)
 
-ALLIED = AttrValue("controller") == Controller()
-ENEMY = AttrValue("controller") == Opponent()
+ALLIED	= AttrValue("controller") == Controller()
+ENEMY	= AttrValue("controller") == Opponent()
 
-
+# Zones
 IN_PLAY		= EnumSelector(Zone.PLAY)
 IN_HAND		= EnumSelector(Zone.HAND)
 IN_DECK		= EnumSelector(Zone.DECK)
@@ -308,27 +318,34 @@ IN_DISCARD	= EnumSelector(Zone.DISCARD)
 KILLED		= EnumSelector(Zone.DISCARD)
 
 # Card Types
-PLAYER	= CARD_TYPE == CardType.PLAYER
-UNIT	= CARD_TYPE == CardType.UNIT
-SPELL	= CARD_TYPE == CardType.SPELL
+PLAYERS			= CARD_TYPE == CardType.PLAYER
+UNITS			= CARD_TYPE == CardType.UNIT
+SPELLS			= CARD_TYPE == CardType.SPELL
+ALL_PLAYERS		= CARD_TYPE == CardType.PLAYER
+ALL_UNITS		= IN_PLAY & UNITS
+ALL_SPELLS		= CARD_TYPE == CardType.SPELL
+ALL_CHARACTERS	= PLAYERS | (UNITS & IN_PLAY)
 
-ALL_PLAYERS		= PLAYER
-ALL_UNITS		= IN_PLAY & UNIT
-ALL_SPELLS		= SPELL
-ALL_CHARACTERS	= PLAYER | (UNIT & IN_PLAY)
+CONTROLLER				= ALLIED & PLAYERS
+ALLIED_HAND				= IN_HAND & ALLIED
+ALLIED_DECK				= IN_DECK & ALLIED
+ALLIED_UNITS			= IN_PLAY & ALLIED & UNITS
+DISCARDED_ALLIED_SPELLS	= IN_DISCARD & ALLIED & SPELLS
+DISCARDED_ALLIED_UNITS	= IN_DISCARD & ALLIED & UNITS
+DEAD_ALLIED_UNITS		= IN_DISCARD & ALLIED & UNITS
 
-CONTROLLER		= ALLIED & PLAYER
-ALLIED_HAND		= IN_HAND & ALLIED
-ALLIED_DECK		= IN_DECK & ALLIED
-ALLIED_UNITS	= IN_PLAY & ALLIED & UNIT
-
-YOUR_HAND		= IN_HAND & ALLIED
-YOUR_DECK		= IN_DECK & ALLIED
-YOUR_UNITS		= IN_PLAY & ALLIED & UNIT
-
-OPPONENT		= ENEMY & PLAYER
+OPPONENT		= ENEMY & PLAYERS
 ENEMY_HAND		= IN_HAND & ENEMY
 ENEMY_DECK		= IN_DECK & ENEMY
-ENEMY_UNITS		= IN_PLAY & ENEMY & UNIT
+ENEMY_UNITS		= IN_PLAY & ENEMY & UNITS
 
 
+# Assign names to all custom selectors (using their variable names).
+for name, obj in inspect.getmembers(sys.modules[__name__]):
+	if isinstance(obj, Selector):
+		obj.name = name
+
+#for name, obj in inspect.getmembers(sys.modules[__name__]):
+#	if isinstance(obj, Selector):
+#		obj.name = name
+#		print("%r = %s" %(obj, obj.eval_name()))

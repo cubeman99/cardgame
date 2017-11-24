@@ -129,11 +129,11 @@ class NoxiousTentacle:
 	tribe = Tribe.OCTOPI
 	cost	= (0, 0)
 	stats	= (2, 1)
-	aftermath = Exists(SOURCE_OF_DEATH & UNIT).then(Damage(SOURCE_OF_DEATH, 2))
+	aftermath = Exists(SOURCE_OF_DEATH & UNITS).then(Damage(SOURCE_OF_DEATH, 2))
 
 class SunkenGoliath:
 	name = "Sunken Goliath"
-	text = " Aftermath: destroy an enemy unit with less attack"
+	text = "Aftermath: destroy an enemy unit with less attack"
 	type = CardType.UNIT
 	tribe = Tribe.OCTOPI
 	cost	= (3, 0)
@@ -142,7 +142,7 @@ class SunkenGoliath:
 		Destroy(Choose.CHOICE))
 
 class UnstableLurker:
-	name	= "Sunken Goliath"
+	name	= "Unstable Lurker"
 	text	= "Aftermath: Deal 3 damage to all enemies"
 	type	= CardType.UNIT
 	tribe	= Tribe.OCTOPI
@@ -157,8 +157,7 @@ class NecrolightFollower:
 	tribe	= Tribe.OCTOPI
 	cost	= (0, 1)
 	stats	= (2, 3)
-	aftermath	= None
-	#events		= OWN_TURN_BEGIN.on(Buff(SELF, "FP1_005e"))
+	aftermath = Choose(CONTROLLER, DEAD_ALLIED_UNITS - SELF).then(Bounce(Choose.CHOICE))
 
 class NecrolightPriestess:
 	name	= "Necrolight Priestess"
