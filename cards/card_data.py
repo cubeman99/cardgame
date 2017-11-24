@@ -44,6 +44,7 @@ class CardData:
 	inform		= prop(GameTag.INFORM, bool)
 	spy			= prop(GameTag.SPY, bool)
 	toxic		= prop(GameTag.TOXIC, bool)
+	muddle		= prop(GameTag.MUDDLE, bool)
 
 	inspire		= prop(GameTag.INSPIRE, int)
 

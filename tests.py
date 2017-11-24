@@ -327,10 +327,57 @@ class Mechanics(pyunit.TestCase):
 		self.expect_eq(len(card.buffs), 1)
 
 	def test_swarm(self):
-		pass
+		game = Game()
 
 	def test_inspire(self):
-		pass
+		game = Game()
+
+	def test_wisdom(self):
+		game = Game()
+
+	def test_muddle(self):
+		# Setup the game state.
+		game = Game()
+		slug = game.player1.give("TomePrinter", Zone.PLAY)
+		valid_choices = [
+			game.player2.give("TomePrinter"),
+			game.player2.give("TomePrinter"),
+			game.player2.give("TomePrinter"),
+		]
+		invalid_choices = [
+			slug,
+			game.player1.give("TomePrinter"),
+			game.player2.give("TomePrinter", Zone.PLAY),
+		]
+		defender = invalid_choices[2]
+
+		# Attack a player and verify a discard choice begins
+		self.expect_true(game.player2.choice == None)
+		slug.attack(game.player2)
+		self.expect_true(game.player2.choice != None)
+
+		# Verify which cards are in the choice
+		choice = game.player2.choice
+		self.expect_eq(len(choice.cards), 3)
+		self.expect_true(valid_choices[0] in choice.cards)
+		self.expect_true(valid_choices[1] in choice.cards)
+		self.expect_true(valid_choices[2] in choice.cards)
+		self.expect_false(invalid_choices[0] in choice.cards)
+		self.expect_false(invalid_choices[1] in choice.cards)
+		self.expect_false(invalid_choices[2] in choice.cards)
+
+		# Choose a card and verify it is discarded
+		self.expect_eq(valid_choices[0].zone, Zone.HAND)
+		choice.choose(valid_choices[0])
+		self.expect_eq(game.player2.choice, None)
+		self.expect_eq(valid_choices[0].zone, Zone.DISCARD)
+
+		# Attack a unit and verify there is no discard choice
+		slug.attack(defender)
+		self.expect_true(game.player2.choice == None)
+
+	def test_toxic(self):
+		game = Game()
 
 if __name__=="__main__":
 	cards.db.initialize()

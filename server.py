@@ -19,6 +19,9 @@ import json
 #from SocketServer import ThreadingMixIn
 
 
+server_log = logging.Logger("Server Log")
+
+
 # This will by default convert things to integers (entities will become entity IDs)
 class GameSerializer(json.JSONEncoder):
 	def default(self, o):
@@ -52,7 +55,7 @@ class ServerManager:
 		if self.player.choice:
 			return self.refresh_choices()
 
-		print("Refreshing options...")
+		server_log.log("Refreshing options for %s...", self.player)
 
 		self.options.append({"Type": OptionType.DONE})
 		for entity in self.game.choosing_player.actionable_entities:
@@ -66,7 +69,7 @@ class ServerManager:
 		self.queued_data.append(payload)
 
 	def refresh_choices(self):
-		print("Refreshing choices...")
+		server_log.log("Refreshing choices for %s...", self.player)
 		choice = self.player.choice
 		self.choices = {
 			"ChoiceType": choice.type,
@@ -95,7 +98,7 @@ class ServerManager:
 	def tag_change(self, entity, tag, value):
 		if tag < 0:
 			return
-		print("Queueing a tag change for %r: %s -> %r" %(entity, tag, value))
+		server_log.log("Queueing a tag change for %r: %s -> %r" %(entity, tag, value))
 		payload = {
 			"Type": "TagChange",
 			"TagChange": {
@@ -152,7 +155,7 @@ class ServerManager:
 				entity = self.game.find_removed_entity(entity_id)
 				if entity:
 					# First, refresh the state for the client to know
-					print("Removing entity %r" %(entity))
+					server_log.log("Removing entity %r", entity)
 					self.refresh_state(entity_id)
 					# Then, remove it from our state.
 					self.game_state.pop(entity_id)
@@ -234,7 +237,7 @@ class ClientThread(Thread):
 			if not data:
 				continue
 
-			print("Received data from %s: %s" %(self.player, data))
+			server_log.log("Received data from %s: %s", self.player, data)
 
 			message = self.decoder.decode(data.decode("utf-8"))
 			self.server.receive_data(self.player, message)
@@ -243,7 +246,7 @@ class ClientThread(Thread):
 				connection.manager.refresh_options()
 				connection.send_queued_data()
 
-		print("Client thread for %s has terminated" %(self.player))
+		server_log.log("Client thread for %s has terminated", self.player)
 
 	def recv_msg(self):
 		"""Read message length and unpack it into an integer"""
@@ -271,7 +274,7 @@ class ClientThread(Thread):
 
 	def send_data(self, data):
 		"""Send data to the client"""
-		print("Sending to %s: %d bytes" %(self.player, len(data)))
+		server_log.log("Sending to %s: %d bytes", self.player, len(data))
 		# Prefix each message with a 4-byte length (network byte order)
 		data = struct.pack('i', len(data)) + data
 		self.connection.send(data)
@@ -286,7 +289,7 @@ class ClientThread(Thread):
 		"""Send data (dictionary) to the client"""
 		data = self.serializer.encode(data).encode("utf-8")
 		data = struct.pack('i', len(data)) + data
-		print("Sending to %s: %d bytes" %(self.player, len(data)))
+		server_log.log("Sending to %s: %d bytes", self.player, len(data))
 		self.connection.send(data)
 
 
@@ -336,75 +339,40 @@ class Server:
 		#self.game = Game(players=[player1, player2])
 		self.done = False
 
-		#self.game.player2.give("TestCard")
-		self.game.player2.give("OctopiExile")
-		self.game.player2.give("InfestedWhale")
-		#self.game.player2.give("EchoingFiend")
-		self.game.player2.give("ServantOfElagalth")
-		self.game.player2.give("UnstableLurker")
-		self.game.player2.give("NoxiousTentacle")
-		#self.game.player2.give("ElegalthsChosen")
-		self.game.player2.give("Overrun")
-
-		goliath = self.game.player1.give("SunkenGoliath")
+		goliath = self.game.player1.give("SunkenGoliath", Zone.PLAY)
+		self.game.player1.give("TomePrinter", Zone.PLAY)
 		self.game.player1.give("WarlordHeir")
 		self.game.player1.give("RipperPack")
 		self.game.player1.give("BonehoarderBrute")
 		self.game.player1.give("WarpackChieftan")
-		#self.game.player1.give("PotentAfterlife")
-		#self.game.player1.give("ExtremePressure")
 		self.game.player1.give("RageheartThug")
 		self.game.player1.give("AgileSquirmer")
 		self.game.player1.give("NecrolightSoldier")
 
-		"""self.game.player1.give("RageheartThug")
-		self.game.player1.give("OctopiExile")
-		self.game.player1.give("TestCard")
-		self.game.player1.give("InfestedWhale")
-		self.game.player1.give("EchoingFiend")
-		self.game.player1.give("ServantOfElagalth")
-		self.game.player1.give("StarvingCephalopod")
-		self.game.player1.give("AgileSquirmer")
-		self.game.player1.give("NecrolightPriestess")
-		self.game.player1.give("NoxiousTentacle")
-		self.game.player1.give("ElegalthsChosen")
-		self.game.player1.give("AbyssalSummoning")"""
-
-
-		#for i in range(0, 40):
-		#	self.game.player1.card("OctopiExile", zone=Zone.DECK)
-		#	self.game.player2.card("OctopiExile", zone=Zone.DECK)
+		self.game.player2.give("OctopiExile", Zone.PLAY)
+		self.game.player2.give("InfestedWhale", Zone.PLAY)
+		self.game.player2.give("ServantOfElagalth")
+		self.game.player2.give("UnstableLurker")
+		self.game.player2.give("NoxiousTentacle")
+		self.game.player2.give("Overrun")
 
 		for i in range(0, 40):
 			self.game.player1.card(random.choice(test_deck)[1], zone=Zone.DECK)
 			self.game.player2.card(random.choice(test_deck)[1], zone=Zone.DECK)
 
-		#for count, card_id in test_deck:
-		#	for i in range(0, count):
-		#		self.game.player1.card(card_id, zone=Zone.DECK)
-		#		self.game.player2.card(card_id, zone=Zone.DECK)
-
 		self.game.player1.shuffle_deck()
 		self.game.player2.shuffle_deck()
 		self.game.begin_turn(self.game.player1)
-		self.game.player1.hand[0].play()
-		self.game.player1.hand[1].play()
-		self.game.player2.hand[0].play()
-		self.game.player2.hand[1].play()
 		self.game.player1.morale += 100
 		self.game.player1.supply += 100
 		self.game.player2.morale += 100
 		self.game.player2.supply += 100
-
 		goliath.damage = 6
-
-		deck_size = len([card for card in self.game.player1.deck])
-		print("Deck size = %d" %(deck_size))
 
 
 	def bind(self, port, host=""):
 		"""Bind the server to an address"""
-		print("Binding server to port %d" %(port))
+		server_log.log("Binding server to port %d", port)
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.socket.bind((host, port))
@@ -430,7 +398,7 @@ class Server:
 					break
 
 			if not thread_player:
-				print("Error: a client tried to connect but game is full")
+				server_log.log("Error: a client tried to connect but game is full")
 				data = Message(ServerMessage.GAME_FULL).pack()
 				thread.manager.queued_data += [{
 					"Type": "RefuseConnection",
@@ -441,7 +409,7 @@ class Server:
 				thread.send_queued_data()
 				conn.close()
 			else:
-				print("%s has connected!" %(thread_player))
+				server_log.log("%s has connected!", thread_player)
 				thread = ClientThread(self, thread_player, conn, ip, port)
 				thread_player.connection = thread
 				thread.start()
@@ -480,13 +448,13 @@ class Server:
 
 	def receive_data(self, player, message):
 		"""Decode a packet of bytes received from the given player"""
-		print("Received message from %s: %s" %(player, message))
+		server_log.log("Received message from %s: %s", player, message)
 
 		type = message["Type"]
 		data = message.get(type, None)
 
 		if type == "Disconnect":
-			print("%s has disconnected" %(player))
+			server_log.log("%s has disconnected", player)
 			player.connection.disconnected = True
 			self.connections.remove(player.connection)
 			player.connection = None
@@ -513,7 +481,6 @@ class Server:
 			if not card:
 				print("Card ID '%d' does not exist" %(entity_id))
 				return False
-			print("Playing %s" %(card.name))
 			card.play(targets=targets)
 			return True
 
@@ -525,7 +492,6 @@ class Server:
 				return False
 			for card in player.choice.cards:
 				if card.entity_id == entity_id:
-					print("%r chooses %r" %(player, card))
 					player.choice.choose(card)
 					return True
 			return False

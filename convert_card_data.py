@@ -61,7 +61,7 @@ def create_card(name, card_class):
 	return CardDetails(name, tags)
 
 # Load all cards into the database.
-modules = ["aard", "octopi"]
+modules = ["aard", "octopi", "mole", "slug"]
 for module in modules:
 	for name, obj in inspect.getmembers(sys.modules["cards.%s" %(module)]):
 		#if inspect.isclass(obj):

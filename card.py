@@ -172,7 +172,8 @@ class BaseCard(Entity):
 		pass
 
 	def discard(self):
-		pass
+		logging.action_log.log("%s discards %r", self.controller, self)
+		self.zone = Zone.DISCARD
 
 	def draw(self):
 		#if len(self.controller.hand) >= MAX_HAND_SIZE:

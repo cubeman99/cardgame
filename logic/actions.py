@@ -372,6 +372,14 @@ class Death(GameAction):
 		if target.aftermaths:
 			source.game.queue_actions(source, [Aftermath(target)])
 
+class Discard(TargetedAction):
+	"""
+	Discard card targets in a player's hand.
+	"""
+	def invoke(self, source, target):
+		self.broadcast(source, EventListener.ON, target)
+		target.discard()
+
 class Summon(TargetedAction):
 	"""
 	Summons \a card for each target.
@@ -732,6 +740,9 @@ class Choose(GameAction):
 			player = player.eval(source.game.players, source)
 			assert len(player) == 1
 			player = player[0]
+		elif isinstance(player, LazyValue):
+			player = player.evaluate(source)
+			assert player != None
 
 		# Evaluate the choice list argument.
 		cards = self._args[1]
@@ -769,11 +780,8 @@ class Choose(GameAction):
 		if card not in self.cards:
 			raise InvalidAction("%r is not a valid choice (one of %r)" % (card, self.cards))
 		action_log.log("%r chooses %r" %(self.player, card))
-		for _card in self.cards:
-			if _card is card:
-				pass
-			else:
-				_card.discard()
+
+		# TODO: need to discard certain choice cards
 
 		self.player.choice = None
 		self.source.game.choice = None

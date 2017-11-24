@@ -9,16 +9,15 @@ from logic.conditions import *
 # Units
 #------------------------------------------------------------------------------
 
-TomePrinter_Buff = buff(max_hand_size=+1)
 
-class IchorExile:
-	name	= "Ichor Exile"
-	text	= "Your max hand size is increased by one while this Unit is in play."
+class TomePrinter:
+	name	= "Tome Printer"
+	text	= "Muddle."
 	type	= CardType.UNIT
-	tribe	= Tribe.MOLE
-	cost	= (0, 1)
-	stats	= (0, 2)
-	update	= Refresh(CONTROLLER, buff="TomePrinter_Buff")
+	tribe	= Tribe.SLUG
+	cost	= (0, 0)
+	stats	= (1, 2)
+	muddle	= 1
 
 #------------------------------------------------------------------------------
 # Spells

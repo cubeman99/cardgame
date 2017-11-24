@@ -2,6 +2,8 @@
 from cards.card_data import CardData
 from cards.octopi import *
 from cards.aard import *
+from cards.mole import *
+from cards.slug import *
 from enums import *
 import sys
 import inspect
@@ -84,7 +86,11 @@ class CardDatabase(dict):
 
 		# Add the special keyword scripts.
 		if card.fury:
-			card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(Buff(SELF, "Buff_Fury")))
+			card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(
+				Buff(SELF, "Buff_Fury")))
+		if card.muddle:
+			card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(
+				Choose(Attack.DEFENDER, ENEMY_HAND).then(Discard(Choose.CHOICE))))
 		#if card.inspire:
 		#	card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(GiveMorale(CONTROLLER, INSPIRE(SELF))))
 		#if card.spy:
@@ -113,7 +119,7 @@ if "db" not in globals():
 	db = CardDatabase()
 
 	# Load all cards into the database.
-	modules = ["aard", "octopi"]
+	modules = ["aard", "octopi", "mole", "slug"]
 	for module in modules:
 		for name, obj in inspect.getmembers(sys.modules["cards.%s" %(module)]):
 			#if inspect.isclass(obj):
