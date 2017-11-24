@@ -5,6 +5,7 @@ from enums import *
 from logic.selector import *
 from logic.lazynum import *
 from exceptions import *
+from manager import Manager, CardManager
 
 def _eval_card(source, card):
 	"""
@@ -460,21 +461,22 @@ class Play(GameAction):
 		elif card.type == CardType.SPELL:
 			emerge_actions = card.get_actions("play")
 
-		# Check for corrupt
+		# Trigger the card's corrupt actions.
 		if card.corrupts:
 			if targets[0] != None:
-				action_log.log("%r corrupts %r", card, targets[0])
-				source.game.queue_actions(card, [Destroy(targets[0])])
-				emerge_actions = card.get_actions("corrupt") + emerge_actions
+				# Success: Perform the corrupt action
+				source.game.queue_actions(card, [Corrupt(card, card.targets)])
 			else:
+				# Failure: append the corrupt failure actions to the beggining
+				# of the  emerge actions
 				action_log.log("%r fails to corrupt", card)
 				emerge_actions = card.get_actions("corrupt_fail") + emerge_actions
 
-		# Trigger the card's emerge actions
+		# Trigger the card's emerge actions.
 		if len(emerge_actions) > 0:
 			source.game.queue_actions(card, [Emerge(card, card.targets)])
 
-		# Broad cast the "After Play" event
+		# Broadcast the "After Play" event
 		self.broadcast(player, EventListener.AFTER, player, card)
 
 
@@ -571,22 +573,27 @@ class Wisdom(TargetedAction):
 # Corrupt = Destroy an allied unit to trigger an effect.
 class Corrupt(TargetedAction):
 	CORRUPTOR = ActionArg()
-	TARGET = ActionArg()
+	#TARGET = ActionArg()
 
-	def invoke(self, source, corruptor, target):
-		action_log.log("%r corrupts %r", corruptor, target)
+	def invoke(self, source, target):
+		corrupt_target = target.targets[0]
+		action_log.log("%r corrupts %r", target, corrupt_target)
 
-		corruptor.target = target
-
-		# Destroy the target.
-		source.game.queue_actions(corruptor, [Destroy(target)])
+		# Destroy the corrupt target.
+		source.game.queue_actions(target, [Destroy(corrupt_target)])
 
 		# Perform the corrupt actions.
-		corrupt_actions = corruptor.get_actions("corrupt")
+		corrupt_actions = target.get_actions("corrupt")
 		for action in corrupt_actions:
-			source.game.queue_actions(corruptor, action)
+			if callable(action):
+				actions = action(target)
+			else:
+				actions = action
+			source.game.queue_actions(target, action)
 
-		corruptor.target = None
+			if target.controller.extra_corrupts:
+				action_log.log("Triggering corrupt action for %r again", target)
+				source.game.queue_actions(target, actions)
 
 # Inspire = Gain X Morale when this unit attacks a player
 class Inspire(TargetedAction):
@@ -691,6 +698,34 @@ class Bounce(TargetedAction):
 		else:
 			action_log.log("%r is bounced back to %s's hand", target, target.controller)
 			target.zone = Zone.HAND
+
+
+
+
+
+class AuraBuff:
+	def __init__(self, source, entity):
+		self.source = source
+		self.entity = entity
+		self.tags = CardManager(self)
+
+	def __repr__(self):
+		return "<AuraBuff %r -> %r>" % (self.source, self.entity)
+
+	def update_tags(self, tags):
+		self.tags.update(tags)
+		self.tick = self.source.game.tick
+
+	def remove(self):
+		action_log.log("Destroying %r", self)
+		self.entity.slots.remove(self)
+		self.source.game.active_aura_buffs.remove(self)
+
+	def _getattr(self, attr, i):
+		value = getattr(self, attr, 0)
+		if callable(value):
+			return value(self.entity, i)
+		return i + value
 
 
 class Refresh:

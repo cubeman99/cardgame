@@ -21,24 +21,20 @@ class GameTag(IntEnum):
 	TEXT			= 12
 	TERRITORY		= 13
 	MAX_HAND_SIZE	= 14
-
 	STEP			= 15
 	NEXT_STEP		= 16
-
 	CARD_ID			= 17
 	ENTITY_ID		= 18
 	ZONE			= 19
 	DAMAGE			= 20
 	OWNER			= 21
-
 	DECLARED_ATTACK		= 22
 	DECLARED_INTERCEPT	= 23
-
 	TURN_NUMBER		= 24
 	TURN_PLAYER		= 25
 	STEP_PLAYER		= 26
-
 	TOKEN			= 27
+	EXTRA_CORRUPTS	= 28
 
 
 	# Keywords

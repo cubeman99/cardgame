@@ -17,6 +17,7 @@ class Player(LiveEntity):
 	supply			= int_property("supply")
 	territory		= int_property("territory")
 	max_hand_size	= int_property("max_hand_size")
+	extra_corrupts	= slot_property("extra_corrupts")
 
 	name = "UNKNOWN"
 

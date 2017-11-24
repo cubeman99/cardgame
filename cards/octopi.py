@@ -102,7 +102,9 @@ class ElegalthsDeputy:
 	tribe	= Tribe.OCTOPI
 	cost	= (4, 0)
 	stats	= (2, 5)
-	aftermath = Summon(CONTROLLER, "ElegalthsDeputy_Token")
+	aftermath	= Summon(CONTROLLER, "ElegalthsDeputy_Token")
+	update		= Refresh(CONTROLLER, {GameTag.EXTRA_CORRUPTS: True})
+
 
 # TODO: Name this token
 class ElegalthsDeputy_Token:
@@ -227,7 +229,7 @@ class SacrificialIncantation:
 	tribe	= Tribe.OCTOPI
 	cost	= (3, 0)
 	targets	= [ALL_UNITS]
-	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER, 1) # TODO: allow additional cast (return to hand??)
+	corrupt	= Damage(TARGET[1], 5), GiveMorale(CONTROLLER, 1), Bounce(SELF)
 
 class ReturnFromTheAbyss:
 	name	= "Return from the Abyss"

@@ -222,8 +222,8 @@ class PlayerCard:
 	text	= "Fury"
 	type	= CardType.PLAYER
 	tribe	= Tribe.AARD
-	morale	= 1
-	supply	= 1
+	morale	= 0
+	supply	= 0
 	stats	= (0, 100)
 	max_hand_size = 6
 

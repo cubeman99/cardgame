@@ -190,6 +190,72 @@ class CardTests(pyunit.TestCase):
 		self.expect_eq(game.player1.choice, None)
 		self.expect_eq(len(game.player1.hand), 2)
 
+	def test_elegalths_deputy(self):
+		"""
+		Unit: Elegalth's Deputy
+		All corrupts, trigger twice while alive, Aftermath: summon a 1/1
+		"""
+		# Corrupt without extra corrupts
+		game = Game()
+		target = game.player1.give("PackExile", Zone.PLAY)
+		game.player1.give("AbyssalSummoning").play(targets=[target])
+		self.expect_eq(len(game.player1.field), 1)
+		self.expect_eq(game.player1.extra_corrupts, False)
+
+		# Corrupt with extra corrupts
+		game = Game()
+		self.expect_eq(game.player1.extra_corrupts, False)
+		card = game.player1.give("ElegalthsDeputy").play()
+		self.expect_eq(game.player1.extra_corrupts, True)
+		self.expect_eq(len(game.player1.field), 1)
+		target = game.player1.give("PackExile", Zone.PLAY)
+		game.player1.give("AbyssalSummoning").play(targets=[target])
+		self.expect_eq(len(game.player1.field), 3)
+
+		# Kill it, verify the aftermath, and verify extra corrupts go away
+		game.queue_actions(game.player1, [Destroy(card)])
+		game.process_deaths()
+		self.expect_eq(len(game.player1.field), 3)
+		game.player1.give("AbyssalSummoning").play(
+			targets=[game.player1.field[0]])
+		self.expect_eq(len(game.player1.field), 3)
+
+	def test_sacrificial_incantation(self):
+		"""
+		Spell: Sacrificial Incantation
+		Corrupt: deal 5 damage to a unit, gain 1 morale. Every unit corrupted
+		allows an additional cast.
+		"""
+		game = Game()
+		game.player1.morale = 10
+		self.expect_eq(len(game.player1.hand), 0)
+		card = game.player1.give("SacrificialIncantation")
+		self.expect_eq(len(game.player1.hand), 1)
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_eq(game.player1.morale, 10)
+
+		# Play the card, verify it returns to the hand
+		# Also verify the two targets die.
+		corrupt_target = game.player1.give("PackExile", Zone.PLAY)
+		damage_target = game.player2.give("PackExile", Zone.PLAY)
+		card.play(targets=[corrupt_target, damage_target])
+		self.expect_eq(len(game.player1.hand), 1)
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_eq(game.player1.morale, 8)
+		self.expect_true(corrupt_target.dead)
+		self.expect_true(damage_target.dead)
+
+		# Play the card, verify it returns to the hand
+		# Also verify the two targets die.
+		corrupt_target = game.player1.give("PackExile", Zone.PLAY)
+		damage_target = game.player2.give("PackExile", Zone.PLAY)
+		card.play(targets=[corrupt_target, damage_target])
+		self.expect_eq(len(game.player1.hand), 1)
+		self.expect_eq(card.zone, Zone.HAND)
+		self.expect_eq(game.player1.morale, 6)
+		self.expect_true(corrupt_target.dead)
+		self.expect_true(damage_target.dead)
+
 
 
 

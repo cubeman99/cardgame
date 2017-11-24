@@ -153,6 +153,8 @@ class CardManager(Manager):
 		GameTag.TERRITORY:		"territory",
 		GameTag.CONTROLLER:		"controller",
 		GameTag.ZONE:			"zone",
+		GameTag.EXTRA_CORRUPTS:	"extra_corrupts",
+
 
 		GameTag.DECLARED_ATTACK:	"declared_attack",
 		GameTag.DECLARED_INTERCEPT:	"declared_intercept",
