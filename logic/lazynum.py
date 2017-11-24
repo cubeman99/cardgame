@@ -18,8 +18,7 @@ class LazyValue(metaclass=ABCMeta):
 # Something that evaluates at runtime.
 class LazyNum(LazyValue):
 	def __init__(self):
-		self.base = 1
-		self.offset = 0
+		pass
 
 	def evaluate(self, source) -> int:
 		raise NotImplementedError
@@ -40,30 +39,14 @@ class LazyNum(LazyValue):
 	__lt__ = _cmp("lt")
 
 	def __neg__(self):
-		ret = copy.copy(self)
-		ret.base = -ret.base
-		return ret
-
+		# TODO: should do negation properly
+		return LazyNumOperation(operator.mul, -1, self)
 	def __add__(self, other):
 		return LazyNumOperation(operator.add, self, other)
-		#ret = copy.copy(self)
-		#self.offset += other
-		#return ret
-
 	def __sub__(self, other):
 		return LazyNumOperation(operator.sub, self, other)
-		#ret = copy.copy(self)
-		#self.offset -= other
-		#return ret
-
 	def __mul__(self, other):
 		return LazyNumOperation(operator.mul, self, other)
-		#ret = copy.copy(self)
-		#ret.base *= other
-		#return ret
-
-	def num(self, n):
-		return (n * self.base) + self.offset
 
 	def get_entities(self, source):
 		from logic.selector import Selector
@@ -131,7 +114,7 @@ class Count(LazyNum):
 		return "%s(%r)" % (self.__class__.__name__, self.selector)
 
 	def evaluate(self, source):
-		return self.num(len(self.get_entities(source)))
+		return len(self.get_entities(source))
 
 
 class OpAttr(LazyNum):
@@ -156,7 +139,7 @@ class OpAttr(LazyNum):
 			else:
 				# XXX: int() because of CardList counter tags
 				ret = self.op(int(e.tags[self.tag]) for e in entities)
-			return self.num(ret)
+			return ret
 		else:
 			return None
 

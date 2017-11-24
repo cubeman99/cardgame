@@ -39,8 +39,8 @@ class CardDatabase(dict):
 		card.scripts = type(card_class.__name__, (card_class, ), {})
 
 		scriptnames = [
-			"update", "emerge", "aftermath", "corrupt", "play", "draw",
-			"events"
+			"update", "emerge", "aftermath", "corrupt", "corrupt_fail",
+			"play", "draw", "events"
 		]
 
 		# Convert card members to tags.

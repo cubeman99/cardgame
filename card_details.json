@@ -463,6 +463,14 @@
 		"corrupt": 1,
 		"card_type": "spell"
 	},
+	"ReturnFromTheAbyss": {
+		"name": "Return from the Abyss",
+		"text": "Select two graveyard cards, return them to your hand.",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 2,
+		"card_type": "spell"
+	},
 	"SacrificialIncantation": {
 		"name": "Sacrificial Incantation",
 		"text": "Corrupt: deal 5 damage to a unit, gain 1 morale. Every unit corrupted allows an additional cast.",
@@ -600,6 +608,26 @@
 		"morale": 0,
 		"supply": 0,
 		"card_type": "unit"
+	},
+	"CovenBruiser": {
+		"name": "Coven Bruiser",
+		"swarm": "CovenBruiser_Swarm",
+		"text": "Swarm +1/+1, Conduit: +X/+X",
+		"tribe": "eel",
+		"power": 1,
+		"health": 1,
+		"morale": 1,
+		"supply": 1,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"CovenBruiser_Buff": {
+		"card_type": "effect"
+	},
+	"CovenBruiser_Swarm": {
+		"card_type": "effect",
+		"power": 1,
+		"health": 1
 	},
 	"StaticSnap": {
 		"name": "Static Snap",

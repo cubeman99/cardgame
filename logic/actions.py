@@ -4,6 +4,7 @@ from logging import action_log
 from enums import *
 from logic.selector import *
 from logic.lazynum import *
+from exceptions import *
 
 def _eval_card(source, card):
 	"""
@@ -194,7 +195,7 @@ class Action(metaclass=ActionMeta):
 class GameAction(Action):
 	def trigger(self, source):
 		args = self.get_args(source)
-		self.invoke(source, *args)
+		self.invoke(source, *args, **self._kwargs.copy())
 
 		for action in self.callback:
 			action_log.log("%r queues up callback %r", self, action)
@@ -242,6 +243,8 @@ class TargetedAction(Action):
 			ret = t
 		elif isinstance(t, LazyValue):
 			ret = t.evaluate(source)
+		elif t == None:
+			return [None]
 		else:
 			ret = t.eval(source.game, source)
 		if not ret:
@@ -273,7 +276,7 @@ class TargetedAction(Action):
 			action_log.log("%r triggering %r targeting %r", source, self, targets)
 			for target in targets:
 				target_args = self.get_target_args(source, target)
-				ret.append(self.invoke(source, target, *target_args))
+				ret.append(self.invoke(source, target, *target_args, **self._kwargs.copy()))
 
 				for action in self.callback:
 					action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
@@ -394,11 +397,13 @@ class Summon(TargetedAction):
 		ret = super().get_args(source)
 		return ret
 
-	def invoke(self, source, target, cards):
+	def invoke(self, source, target, cards, token=False):
 		#log.info("%s summons %r", target, cards)
 		cards = _eval_card(source, cards)
 		if isinstance(target, AttrValue):
 			target = target.eval(source)
+
+		#summon_as_token = self._kwargs.get("token", False)
 
 		for card in cards:
 			action_log.log("Summoning %r for %s", card, target)
@@ -410,6 +415,10 @@ class Summon(TargetedAction):
 			# Move the card into play
 			if card.zone != Zone.PLAY:
 				card.zone = Zone.PLAY
+
+			#if summon_as_token:
+			if token:
+				card.token = True
 
 			# Broadcast the summon event.
 			self.queue_broadcast(self, (source, EventListener.ON, target, card))
@@ -451,11 +460,17 @@ class Play(GameAction):
 		elif card.type == CardType.SPELL:
 			emerge_actions = card.get_actions("play")
 
+		# Check for corrupt
 		if card.corrupts:
-			action_log.log("%r corrupts %r" %(card, targets[0]))
-			source.game.queue_actions(card, [Destroy(targets[0])])
-			emerge_actions = card.get_actions("corrupt") + emerge_actions
+			if targets[0] != None:
+				action_log.log("%r corrupts %r", card, targets[0])
+				source.game.queue_actions(card, [Destroy(targets[0])])
+				emerge_actions = card.get_actions("corrupt") + emerge_actions
+			else:
+				action_log.log("%r fails to corrupt", card)
+				emerge_actions = card.get_actions("corrupt_fail") + emerge_actions
 
+		# Trigger the card's emerge actions
 		if len(emerge_actions) > 0:
 			source.game.queue_actions(card, [Emerge(card, card.targets)])
 
@@ -529,7 +544,10 @@ class Emerge(TargetedAction):
 		elif target.type == CardType.SPELL:
 			emerge_actions = target.get_actions("play")
 		if target.corrupts:
-			emerge_actions = target.get_actions("corrupt") + emerge_actions
+			if target.targets[0] == None:
+				emerge_actions = target.get_actions("corrupt_fail") + emerge_actions
+			else:
+				emerge_actions = target.get_actions("corrupt") + emerge_actions
 
 		for emerge in emerge_actions:
 			if callable(emerge):
@@ -607,6 +625,9 @@ class Copy(LazyValue):
 		else:
 			entities = self.selector.eval(source.game, source)
 
+		if not isinstance(entities, list):
+			entities = [entities]
+
 		return [self.copy(source, e) for e in entities]
 
 
@@ -636,10 +657,9 @@ class Buff(TargetedAction):
 	TARGET = ActionArg()
 	BUFF = CardArg()
 
-	def invoke(self, source, target, buffs):
+	def invoke(self, source, target, buffs, **kwargs):
 		ret = []
 		for buff in buffs:
-			kwargs = self._kwargs.copy()
 			for k, v in kwargs.items():
 				if isinstance(v, LazyValue):
 					v = v.evaluate(source)
@@ -754,6 +774,10 @@ class Choose(GameAction):
 		elif isinstance(cards, LazyValue):
 			cards = cards.evaluate(source)
 
+		count = 1
+		if len(self._args) >= 3:
+			count = self._args[2]
+
 		# TODO: create a card from ID
 		#for card in cards:
 			#if isinstance(card, str):
@@ -763,26 +787,36 @@ class Choose(GameAction):
 				#card.zone = Zone.SET_ASIDE
 
 		action_log.log("%r begins choice between %r" %(player, cards))
-		return player, cards
+		return player, cards, count
 
-	def invoke(self, source, player, cards):
+	def invoke(self, source, player, cards, count):
 		self.source = source
 		self.player = player
 		self.source.game.choosing_player = player
 		self.cards = cards
-		self.min_count = 1
-		self.max_count = 1
+		self.min_count = count
+		self.max_count = count
 		self.source.game.choice = self
 		self.player.choice = self # The player enters a choosing state.
 
-	def choose(self, card):
+	def choose(self, cards):
 		"""
 		Perform the choice. This will trigger any followup actions, plus the
 		rest of the action queue.
 		"""
-		if card not in self.cards:
-			raise InvalidAction("%r is not a valid choice (one of %r)" % (card, self.cards))
-		action_log.log("%r chooses %r" %(self.player, card))
+		if not isinstance(cards, list):
+			cards = [cards]
+
+		# Validate the choices
+		if len(cards) < self.min_count:
+			raise InvalidAction("Too few choices: %d (must be between %d and %d)" % (len(cards), self.min_count, self.max_count))
+		if len(cards) > self.max_count:
+			raise InvalidAction("Too many choices: %d (must be between %d and %d)" % (len(cards), self.min_count, self.max_count))
+		for card in cards:
+			if card not in self.cards:
+				raise InvalidAction("%r is not a valid choice (one of %r)" % (card, self.cards))
+
+		action_log.log("%r chooses %r" %(self.player, cards))
 
 		# TODO: need to discard certain choice cards
 
@@ -792,7 +826,7 @@ class Choose(GameAction):
 		for action in self.choice_callback:
 			action_log.log("Choice queues up callback %r", action)
 			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
-			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[card])
+			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[cards])
 
 # Custom compound actions
 
@@ -806,6 +840,12 @@ def ChooseAndDiscard(player, count=1):
 	return action
 
 
-
+#def ChooseTarget(player, targeted_action):
+#	targets = targeted_action._args[0]
+#	#print(targets)
+#	action = Choose(player, targets).then(
+#		targeted_action)
+#	action.name = "ChooseTarget(%r, %r)" %(player, targeted_action)
+#	return action
 
 

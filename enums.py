@@ -38,6 +38,8 @@ class GameTag(IntEnum):
 	TURN_PLAYER		= 25
 	STEP_PLAYER		= 26
 
+	TOKEN			= 27
+
 
 	# Keywords
 	MUDDLE		= 100
@@ -96,7 +98,7 @@ class CardType(IntEnum):
 	UNIT		= 3
 	SPELL		= 4
 	EFFECT		= 5
-	TOKEN		= 6
+	#TOKEN		= 6
 
 # Resource type
 class ResourceType(IntEnum):

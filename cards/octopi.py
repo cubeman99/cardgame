@@ -43,7 +43,7 @@ class EchoingFiend:
 	tribe	= Tribe.OCTOPI
 	cost	= (1, 1)
 	stats	= (2, 4)
-	corrupt = Summon(CONTROLLER, ExactCopy(CORRUPTED_UNIT))
+	corrupt = Summon(CONTROLLER, ExactCopy(CORRUPTED_UNIT), token=True)
 
 class ServantOfElagalth:
 	name	= "Servant of Elagalth"
@@ -228,6 +228,15 @@ class SacrificialIncantation:
 	cost	= (3, 0)
 	targets	= [ALL_UNITS]
 	corrupt	= Damage(TARGET, 5), GiveMorale(CONTROLLER, 1) # TODO: allow additional cast (return to hand??)
+
+class ReturnFromTheAbyss:
+	name	= "Return from the Abyss"
+	text	= "Select two graveyard cards, return them to your hand."
+	type	= CardType.SPELL
+	tribe	= Tribe.OCTOPI
+	cost	= (0, 2)
+	play	= Choose(CONTROLLER, ALLIED_DISCARD, 2).then(
+				Bounce(Choose.CHOICE))
 
 class PotentAfterlife:
 	name	= "Potent Afterlife"

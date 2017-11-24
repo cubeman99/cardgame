@@ -24,6 +24,7 @@ class BaseCard(Entity):
 		self.tags.update(data.tags)
 		self.type = data.type
 		self.owner = None
+		self.token = False
 
 	def get_all_actions(self, name):
 		return getattr(self.data.scripts, name)

@@ -28,14 +28,15 @@ class Test:
 	def __str__(self):
 		return "%s.%s" %(self.test_case.name, self.name)
 
-	def expect(self, result):
+	def expect(self, result, error_name="error"):
 		if result:
 			self.pass_count += 1
 		else:
 			self.fail_count += 1
 			frame = inspect.stack()[2]
-			color_print("%s(%d): error: %s\n" %(frame.filename,
-				frame.lineno, frame.code_context[0].lstrip().rstrip()))
+			color_print("%s(%d): %s: %s\n" %(frame.filename,
+				frame.lineno, error_name,
+				frame.code_context[0].lstrip().rstrip()))
 		return result
 
 	def run(self):
@@ -107,6 +108,23 @@ class TestCase:
 			color_print("  Actual: %r\n" %(actual))
 			color_print("Expected: %r\n" %(expected))
 
+	def expect_ne(self, actual, expected):
+		if not self.test.expect(actual != expected):
+			color_print("  Actual: %r\n" %(actual))
+			color_print("Expected: %r\n" %(expected))
+
+	def expect_exception(self, exception, func):
+		raised = False
+		try:
+			func()
+		except exception:
+			raised = True
+		else:
+			raised = False
+		if not self.test.expect(raised, error_name="exception error"):
+			color_print("  Actual: no exception\n")
+			color_print("Expected: %s exception\n" %(
+				exception.__name__))
 
 	def main(self):
 		tests = [Test(self, getattr(self, t)) for t in dir(self) if t.startswith("test_")]

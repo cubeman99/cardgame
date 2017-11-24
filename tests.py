@@ -1,6 +1,5 @@
 
-
-
+from exceptions import *
 from game import Game
 from enums import *
 from player import Player
@@ -21,8 +20,32 @@ import tests.unit_test_framework as pyunit
 
 class CardTests(pyunit.TestCase):
 
+	def test_echoing_fiend(self):
+		"""
+		Echoing Fiend
+		Corrupt: Summon a copy of the destroyed Unit as a token
+		"""
+		game = Game()
+		fiend = game.player1.give("EchoingFiend")
+		target = game.player1.give("InfestedWhale", Zone.PLAY)
+
+		# Corrupt the target.
+		self.expect_eq(len(game.player1.field), 1)
+		fiend.play(targets=[target])
+		self.expect_eq(len(game.player1.field), 4)
+
+		# Verify there is an exact copy of target, and that it is a token.
+		target_copy = [e for e in game.player1.field if e.id == target.id]
+		self.expect_eq(len(target_copy), 1)
+		target_copy = target_copy[0]
+		self.expect_eq(target_copy.id, target.id)
+		self.expect_ne(target_copy.entity_id, target.entity_id)
+		self.expect_eq(target.token, False)
+		self.expect_eq(target_copy.token, True)
+
 	def test_infested_whale(self):
 		"""
+		Infested Whale
 		Aftermath: Summon 2 1/1 Tentacles
 		"""
 		game = Game()
@@ -40,6 +63,7 @@ class CardTests(pyunit.TestCase):
 
 	def test_warpack_chieftan(self):
 		"""
+		Warpack Chieftan
 		When this Unit attacks, put a 1/1 Aard Whelp into play attacking the
 		opponent.
 		"""
@@ -114,6 +138,60 @@ class CardTests(pyunit.TestCase):
 		self.expect_false(invalid_choices[1] in game.player1.choice.cards)
 		self.expect_false(invalid_choices[2] in game.player1.choice.cards)
 		self.expect_false(card in game.player1.choice.cards)
+
+	def test_abyssal_summoning(self):
+		"""
+		Spell: Abyssal Summoning
+		Corrupt: Summon a 5/5 Elgathian, else summon a 3/3 Failure
+		"""
+		# Play with corrupt target
+		game = Game()
+		target = game.player1.give("OctopiExile", Zone.PLAY)
+		self.expect_eq(len(game.player1.field), 1)
+		game.player1.give("AbyssalSummoning").play(targets=[target])
+		self.expect_eq(len(game.player1.field), 1)
+		self.expect_true(target.dead)
+		self.expect_eq(game.player1.field[0].power, 5)
+		self.expect_eq(game.player1.field[0].health, 5)
+
+		# Play without corrupt target
+		game = Game()
+		self.expect_eq(len(game.player1.field), 0)
+		game.player1.give("AbyssalSummoning").play(targets=[None])
+		self.expect_eq(len(game.player1.field), 1)
+		self.expect_eq(game.player1.field[0].power, 3)
+		self.expect_eq(game.player1.field[0].health, 3)
+
+	def test_return_from_the_abyss(self):
+		"""
+		Spell: Return From The Abyss
+		Select two graveyard cards, return them to your hand.
+		"""
+		# Play with corrupt target
+		game = Game()
+		valid_targets = [
+			game.player1.give("OctopiExile", Zone.DISCARD),
+			game.player1.give("OctopiExile", Zone.DISCARD),
+			game.player1.give("OctopiExile", Zone.DISCARD),
+		]
+		game.player1.give("ReturnFromTheAbyss").play()
+		self.expect_ne(game.player1.choice, None)
+
+		# Verify the cards listed in the choice
+		choice = game.player1.choice
+		self.expect_eq(len(valid_targets), 3)
+		self.expect_true(valid_targets[0] in choice.cards)
+		self.expect_true(valid_targets[1] in choice.cards)
+		self.expect_true(valid_targets[2] in choice.cards)
+
+		# Choose two valid targets, and verify they return to hand
+		self.expect_eq(len(game.player1.hand), 0)
+		choice.choose(valid_targets[0:2])
+		self.expect_eq(game.player1.choice, None)
+		self.expect_eq(len(game.player1.hand), 2)
+
+
+
 
 
 class PlayTargets(pyunit.TestCase):

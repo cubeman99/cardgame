@@ -148,6 +148,7 @@ class CardManager(Manager):
 		GameTag.INSPIRE:		"inspire",
 		GameTag.SPY:			"spy",
 		GameTag.INFORM:			"inform",
+		GameTag.TOKEN:			"token",
 		GameTag.MAX_HAND_SIZE:	"max_hand_size",
 		GameTag.TERRITORY:		"territory",
 		GameTag.CONTROLLER:		"controller",
