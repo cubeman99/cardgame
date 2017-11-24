@@ -560,8 +560,24 @@
 		"aftermath": 1,
 		"card_type": "unit"
 	},
-	"IchorExile": {
-		"name": "Ichor Exile",
+	"ScholarExile": {
+		"name": "Scholar Exile",
+		"text": "Wisdom: +0/+2 and Inform",
+		"tribe": "mole",
+		"wisdom": "ScholarExile_Wisdom",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0,
+		"card_type": "unit"
+	},
+	"ScholarExile_Wisdom": {
+		"card_type": "effect",
+		"health": 2,
+		"inform": 1
+	},
+	"TomePrinter": {
+		"name": "Tome Printer",
 		"text": "Your max hand size is increased by one while this Unit is in play.",
 		"tribe": "mole",
 		"power": 0,
@@ -574,9 +590,9 @@
 		"card_type": "effect",
 		"max_hand_size": 1
 	},
-	"TomePrinter": {
+	"IchorExile": {
 		"muddle": 1,
-		"name": "Tome Printer",
+		"name": "Ichor Exile",
 		"text": "Muddle.",
 		"tribe": "slug",
 		"power": 1,

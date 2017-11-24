@@ -76,7 +76,7 @@ const TypeInfoBase* GetTagTypeInfo(GameTag tag)
 	switch (tag)
 	{
 	case GameTag::TRIBE:     return &TYPE_INFO_TRIBE;
-	case GameTag::CARD_TYPE: return &TYPE_INFO_CARD_TYPE;
+	case GameTag::CARD_TYPE: return &TYPE_INFO_CARDTYPE;
 	case GameTag::STEP:      return &TYPE_INFO_STEP;
 	case GameTag::ZONE:      return &TYPE_INFO_ZONE;
 	default: return nullptr;

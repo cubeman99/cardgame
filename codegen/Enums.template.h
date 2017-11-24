@@ -43,15 +43,6 @@ T_Enum ParseValue(std::string name)
 	return EnumMap<T_Enum>::STRING_TO_VALUE.at(name);
 }
 
-// Convert an enum value to a string name.
-template <typename T_Enum>
-T_Enum ParseValue(std::string name)
-{
-	// Convert name to uppercase first
-	std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-	return EnumMap<T_Enum>::STRING_TO_VALUE.at(name);
-}
-
 // Convert an string name to an enum value.
 template <typename T_Enum>
 std::string ValueName(T_Enum value)
@@ -79,6 +70,64 @@ public:
 	static const std::map<std::string, int> STRING_TO_INT;
 };
 {enums_end}
+
+class TypeInfoBase
+{
+public:
+	virtual int NameToInt(std::string name) const = 0;
+	virtual std::string IntToName(int value) const = 0;
+	virtual const std::string& GetEnumName() const = 0;
+};
+
+template <typename T_Enum>
+class TypeInfo : public TypeInfoBase
+{
+public:
+	TypeInfo(int x):
+	{}
+	TypeInfo(const std::string& name,
+			std::map<std::string, int> nameToValue,
+			std::map<int, std::string> valueToName) :
+		m_enumName(name),
+		m_nameToValue(nameToValue),
+		m_valueToName(valueToName)
+	{
+	}
+
+	const std::string& GetEnumName() const override
+	{
+		return m_enumName;
+	}
+
+	int NameToInt(std::string name) const override
+	{
+		std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		return m_nameToValue.at(name);
+	}
+
+	std::string IntToName(int value) const override
+	{
+		return m_valueToName.at(value);
+	}
+
+	T_Enum NameToValue(std::string name) const
+	{
+		return (T_Enum) NameToInt(name);
+	}
+
+	std::string ValueToName(T_Enum value) const
+	{
+		return IntToName((int) value);
+	}
+
+private:
+	std::string m_enumName;
+	std::map<std::string, int> m_nameToValue;
+	std::map<int, std::string> m_valueToName;
+};
+
+const TypeInfoBase* GetTagTypeInfo(GameTag tag);
+
 
 }; // namespace enums
 

@@ -310,6 +310,11 @@ INSPIRE			= AttrValue(GameTag.INSPIRE)
 ALLIED	= AttrValue("controller") == Controller()
 ENEMY	= AttrValue("controller") == Opponent()
 
+def CONTROLLED_BY(player):
+	selector = AttrValue("controller") == player
+	selector.name = "CONTROLLED_BY(%r)" %(player)
+	return selector
+
 # Zones
 IN_PLAY		= EnumSelector(Zone.PLAY)
 IN_HAND		= EnumSelector(Zone.HAND)

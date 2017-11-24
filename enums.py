@@ -271,7 +271,7 @@ if __name__ == "__main__":
 			enums.append(obj)
 
 	paths = [
-		#("codegen/Enums.template.h",   "C:/Workspace/C++/CardGame/src/Client/Enums.h"),
+		("codegen/Enums.template.h",   "C:/Workspace/C++/CardGame/src/Client/Enums.h"),
 		("codegen/Enums.template.cpp", "C:/Workspace/C++/CardGame/src/Client/Enums.cpp"),
 	]
 
@@ -286,9 +286,9 @@ if __name__ == "__main__":
 			lambda x: format_enums(x, enums))
 
 		# Save the formatted result to the output path.
-		print(output)
-		#output_file = open(output_path, "w")
-		#output_file.write(output)
-		#output_file.close()
-		#print("Saved to %s" %(output_path))
+		#print(output)
+		output_file = open(output_path, "w")
+		output_file.write(output)
+		output_file.close()
+		print("Saved to %s" %(output_path))
 

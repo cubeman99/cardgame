@@ -105,8 +105,11 @@ class Action(metaclass=ActionMeta):
 		self.callback = ()
 		self.times = 1
 		self.event_queue = []
+		self.name = None
 
 	def __repr__(self):
+		if self.name != None:
+			return self.name
 		#args = ["%s=%r" % (k, v) for k, v in zip(self.ARGS, self._args)]
 		#return "<Action: %s(%s)>" % (self.__class__.__name__, ", ".join(args))
 		args = ["%r" % (v) for k, v in zip(self.ARGS, self._args)]
@@ -790,4 +793,21 @@ class Choose(GameAction):
 			action_log.log("Choice queues up callback %r", action)
 			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
 			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[card])
+
+
+
+# Custom compound actions
+
+def ChooseAndDiscard(player, count=1):
+	action = Choose(player, IN_HAND & CONTROLLED_BY(player)).then(
+		Discard(Choose.CHOICE))
+	action.name = "ChooseAndDiscard(%r" %(player)
+	if count != 1:
+		action.name += ", %d" %(count)
+	action.name += ")"
+	return action
+
+
+
+
 

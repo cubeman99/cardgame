@@ -86,21 +86,24 @@ class CardDatabase(dict):
 
 		# Add the special keyword scripts.
 		if card.fury:
-			card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(
-				Buff(SELF, "Buff_Fury")))
+			card.scripts.events.append(
+				Attack(SELF, ALL_PLAYERS).on(Buff(SELF, "Buff_Fury")))
 		if card.muddle:
-			card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(
-				Choose(Attack.DEFENDER, ENEMY_HAND).then(Discard(Choose.CHOICE))))
-		#if card.inspire:
-		#	card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(GiveMorale(CONTROLLER, INSPIRE(SELF))))
-		#if card.spy:
-		#	card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(GiveMorale(OPPONENT, -1)))
-		#if card.inform:
-		#	card.scripts.events.append(Attack(SELF, ALL_PLAYERS).on(Draw(CONTROLLER)))
+			card.scripts.events.append(
+				Attack(SELF, ALL_PLAYERS).on(
+					ChooseAndDiscard(Attack.DEFENDER)))
 		if hasattr(card_info, "heroic"):
-			card.scripts.update.append((Count(ALLIED_UNITS - SELF) == 0) & Refresh(SELF, buff=card_info.heroic))
+			card.scripts.update.append(
+				(Count(ALLIED_UNITS - SELF) == 0).then(
+					Refresh(SELF, buff=card_info.heroic)))
 		if hasattr(card_info, "swarm"):
-			card.scripts.update.append((Count(ALLIED_UNITS - SELF) >= 3) & Refresh(SELF, buff=card_info.swarm))
+			card.scripts.update.append(
+				(Count(ALLIED_UNITS - SELF) >= 3).then(
+					Refresh(SELF, buff=card_info.swarm)))
+		if hasattr(card_info, "wisdom"):
+			card.scripts.emerge.append(
+				(Count(ALLIED_HAND) >= 4).then(
+					Buff(SELF, card_info.wisdom)))
 
 		# Set choose one cards
 		if hasattr(card_info, "choose"):

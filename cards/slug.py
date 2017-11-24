@@ -10,8 +10,8 @@ from logic.conditions import *
 #------------------------------------------------------------------------------
 
 
-class TomePrinter:
-	name	= "Tome Printer"
+class IchorExile:
+	name	= "Ichor Exile"
 	text	= "Muddle."
 	type	= CardType.UNIT
 	tribe	= Tribe.SLUG

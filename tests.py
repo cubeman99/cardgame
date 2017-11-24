@@ -299,9 +299,12 @@ class Actions(pyunit.TestCase):
 		self.expect_true(card in game.player1.hand)
 
 
-class Mechanics(pyunit.TestCase):
+class Keywords(pyunit.TestCase):
 
 	def test_heroic(self):
+		"""
+		Heroic: Bonuses when sent into combat alone until end of combat.
+		"""
 		game = Game()
 
 		# Heroic: +5/+4 inspire
@@ -326,28 +329,30 @@ class Mechanics(pyunit.TestCase):
 		self.expect_eq(card.inspire, 0)
 		self.expect_eq(len(card.buffs), 1)
 
+		# TODO: until end of combat
+
 	def test_swarm(self):
-		game = Game()
-
-	def test_inspire(self):
-		game = Game()
-
-	def test_wisdom(self):
+		"""
+		Swarm: Bonuses while combat when with 3 allies until end of combat.
+		"""
 		game = Game()
 
 	def test_muddle(self):
+		"""
+		Muddle: When this unit damages a player, that player discards a card.
+		"""
 		# Setup the game state.
 		game = Game()
-		slug = game.player1.give("TomePrinter", Zone.PLAY)
+		slug = game.player1.give("IchorExile", Zone.PLAY)
 		valid_choices = [
-			game.player2.give("TomePrinter"),
-			game.player2.give("TomePrinter"),
-			game.player2.give("TomePrinter"),
+			game.player2.give("IchorExile"),
+			game.player2.give("IchorExile"),
+			game.player2.give("IchorExile"),
 		]
 		invalid_choices = [
 			slug,
-			game.player1.give("TomePrinter"),
-			game.player2.give("TomePrinter", Zone.PLAY),
+			game.player1.give("IchorExile"),
+			game.player2.give("IchorExile", Zone.PLAY),
 		]
 		defender = invalid_choices[2]
 
@@ -356,8 +361,11 @@ class Mechanics(pyunit.TestCase):
 		slug.attack(game.player2)
 		self.expect_true(game.player2.choice != None)
 
-		# Verify which cards are in the choice
+		# Verify the choice and which cards it gives
 		choice = game.player2.choice
+		self.expect_eq(choice.source, slug)
+		self.expect_eq(choice.player, game.player2)
+		self.expect_eq(choice.type, ChoiceType.GENERAL) # TODO: Discard type
 		self.expect_eq(len(choice.cards), 3)
 		self.expect_true(valid_choices[0] in choice.cards)
 		self.expect_true(valid_choices[1] in choice.cards)
@@ -367,16 +375,123 @@ class Mechanics(pyunit.TestCase):
 		self.expect_false(invalid_choices[2] in choice.cards)
 
 		# Choose a card and verify it is discarded
+		hand_size = len(game.player2.hand)
 		self.expect_eq(valid_choices[0].zone, Zone.HAND)
 		choice.choose(valid_choices[0])
 		self.expect_eq(game.player2.choice, None)
 		self.expect_eq(valid_choices[0].zone, Zone.DISCARD)
+		self.expect_eq(len(game.player2.hand), hand_size - 1)
 
 		# Attack a unit and verify there is no discard choice
 		slug.attack(defender)
 		self.expect_true(game.player2.choice == None)
 
+	def test_emerge(self):
+		"""
+		Emerge: Following effect activated when the unit is played.
+		"""
+		game = Game()
+
+	def test_aftermath(self):
+		"""
+		Aftermath: Following effect activated on unit’s death.
+		"""
+		game = Game()
+
+	def test_corrupt(self):
+		"""
+		Corrupt: You may sacrifice an allied unit to gain an effect. Units
+		cannot be sacrificed for multiple purposes.
+		"""
+		game = Game()
+
+	def test_inspire(self):
+		"""
+		Inspire X: Gain X extra Morale when this unit attacks a player.
+		"""
+		game = Game()
+
+	def test_spy(self):
+		"""
+		Spy: Opponent loses 1 Morale when this Unit attacks them.
+		"""
+		game = Game()
+
+	def test_inform(self):
+		"""
+		Inform: Draw a card when this unit damages a player.
+		"""
+		game = Game()
+
+	def test_wisdom(self):
+		"""
+		Wisdom: Gain this effect only if you have 5 or more cards in your hand
+		when you play this card.
+		"""
+		game = Game()
+
+		# Give the player 3 cards.
+		game.player1.give("ScholarExile")
+		game.player1.give("ScholarExile")
+		game.player1.give("ScholarExile")
+
+		# Play a wisdom cards with less than 5 cards in hand
+		card = game.player1.give("ScholarExile")
+		card.play()
+		self.expect_eq(len(card.buffs), 0)
+		self.expect_eq(card.power, 1)
+		self.expect_eq(card.health, 1)
+		self.expect_eq(card.inform, 0)
+
+		# Play a wisdom cards with exactly 5 cards in hand
+		game.player1.give("ScholarExile")
+		card = game.player1.give("ScholarExile")
+		card.play()
+		self.expect_eq(len(card.buffs), 1)
+		self.expect_eq(card.power, 1)
+		self.expect_eq(card.health, 3)
+		self.expect_eq(card.inform, 1)
+
+		# Play a wisdom cards with more than 5 cards in hand
+		game.player1.give("ScholarExile")
+		card = game.player1.give("ScholarExile")
+		card.play()
+		self.expect_eq(len(card.buffs), 1)
+		self.expect_eq(card.power, 1)
+		self.expect_eq(card.health, 3)
+		self.expect_eq(card.inform, 1)
+
 	def test_toxic(self):
+		"""
+		Toxic: Units dealt damage in combat drop to 1 health if they would
+		survive.
+		"""
+		game = Game()
+
+	def test_conduit(self):
+		"""
+		Conduit: Gain X effect where X is the number of allied units in play
+		(if emerge, unit does not count itself)
+		"""
+		game = Game()
+
+	def test_renew(self):
+		"""
+		Renew: Unit heals to full at the start of your turn
+		"""
+		game = Game()
+
+	def test_fury(self):
+		"""
+		Fury: When this unit attacks or intercepts, it gets +1/+1.
+		"""
+		game = Game()
+
+	def test_reinforce(self):
+		"""
+		Reinforce: If you already have a Unit in play of the same type as the
+		reinforce card, gain an effect.
+		"""
 		game = Game()
 
 if __name__=="__main__":

@@ -397,7 +397,7 @@ class Client:
 			elif type == "Choices":
 				choice = thing["Choices"]
 				source_id = choice["SourceID"]
-				player_id = choice["SourceID"]
+				player_id = choice["PlayerID"]
 				entities = choice["Entities"]
 				choice_type = choice["ChoiceType"]
 				self.game.options = []
