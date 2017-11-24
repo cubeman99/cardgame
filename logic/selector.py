@@ -301,6 +301,7 @@ MORALE			= AttrValue(GameTag.MORALE)
 SUPPLY			= AttrValue(GameTag.SUPPLY)
 INSPIRE			= AttrValue(GameTag.INSPIRE)
 
+
 #COST = AttrValue(GameTag.COST)
 #DAMAGE = AttrValue(GameTag.DAMAGE)
 #MANA = AttrValue(GameTag.RESOURCES)
@@ -344,6 +345,7 @@ ENEMY_HAND		= IN_HAND & ENEMY
 ENEMY_DECK		= IN_DECK & ENEMY
 ENEMY_UNITS		= IN_PLAY & ENEMY & UNITS
 
+CONDUIT		= Count(ALLIED_HAND)
 
 # Assign names to all custom selectors (using their variable names).
 for name, obj in inspect.getmembers(sys.modules[__name__]):

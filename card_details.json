@@ -600,5 +600,27 @@
 		"morale": 0,
 		"supply": 0,
 		"card_type": "unit"
+	},
+	"StaticSnap": {
+		"name": "Static Snap",
+		"text": "Conduit: Deal 2 damage to a Unit X+1 times.",
+		"tribe": "eel",
+		"morale": 1,
+		"supply": 2,
+		"card_type": "spell"
+	},
+	"ThunderbloodPontiff": {
+		"name": "Thunderblood Pontiff",
+		"text": "Conduit: +2X/+2X",
+		"tribe": "eel",
+		"power": 1,
+		"health": 1,
+		"morale": 3,
+		"supply": 1,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"ThunderbloodPontiff_Buff": {
+		"card_type": "effect"
 	}
 }

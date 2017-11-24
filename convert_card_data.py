@@ -3,6 +3,9 @@ import inspect
 import sys
 import cards.aard
 import cards.octopi
+import cards.mole
+import cards.slug
+import cards.eel
 import os
 from enums import *
 from enum import IntEnum
@@ -61,7 +64,7 @@ def create_card(name, card_class):
 	return CardDetails(name, tags)
 
 # Load all cards into the database.
-modules = ["aard", "octopi", "mole", "slug"]
+modules = ["aard", "octopi", "mole", "slug", "eel"]
 for module in modules:
 	for name, obj in inspect.getmembers(sys.modules["cards.%s" %(module)]):
 		#if inspect.isclass(obj):

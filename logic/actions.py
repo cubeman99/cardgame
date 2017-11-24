@@ -260,8 +260,8 @@ class TargetedAction(Action):
 			source = source[0]
 
 		times = self.times
-		#if isinstance(times, LazyValue):
-		#	times = times.evaluate(source)
+		if isinstance(times, LazyValue):
+			times = times.evaluate(source)
 		#elif isinstance(times, Action):
 		#	times = times.trigger(source)[0]
 
@@ -793,8 +793,6 @@ class Choose(GameAction):
 			action_log.log("Choice queues up callback %r", action)
 			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
 			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[card])
-
-
 
 # Custom compound actions
 

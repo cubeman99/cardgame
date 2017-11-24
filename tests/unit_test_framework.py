@@ -15,6 +15,7 @@ def plural(word, list):
 
 class Test:
 	def __init__(self, test_case, test_func):
+		self.name = test_func.__name__
 		self.test_case = test_case
 		self.test_func = test_func
 		self.pass_count = 0
@@ -25,7 +26,7 @@ class Test:
 			self.description = ""
 
 	def __str__(self):
-		return "%s.%s" %(self.test_case.name, self.test_func.__name__)
+		return "%s.%s" %(self.test_case.name, self.name)
 
 	def expect(self, result):
 		if result:
@@ -153,14 +154,20 @@ class TestCase:
 				color_print("{test_fail}[  FAILED  ]{} %s\n" %(
 					test))
 
-def run_all_tests(globals):
+def run_all_tests(globals, test_list=None):
 
 	global_dict = dict(globals)#globals())
 
 	test_cases = []
 	for key, value in global_dict.items():
 		if inspect.isclass(value) and issubclass(value, TestCase) and value != TestCase:
-			test_cases.append(value())
+			test_case = value()
+			test_case_tests = []
+			for test in test_case.tests:
+				if test_list == None or test.name in test_list:
+					test_case_tests.append(test)
+			if len(test_case_tests) > 0:
+				test_cases.append(test_case)
 
 	tests = []
 	for test_case in test_cases:
@@ -176,12 +183,17 @@ def run_all_tests(globals):
 	failed_tests = []
 
 	for test_case in test_cases:
+		test_case_tests = []
+		for test in test_case.tests:
+			if test_list == None or test.name in test_list:
+				test_case_tests.append(test)
+
 		color_print("{test_pass}[----------]{} %d %s from %s\n" %(
 			len(test_case.tests), plural("test", test_case.tests),
 			test_case.name))
 		test_case.setup()
 
-		for test in test_case.tests:
+		for test in test_case_tests:
 			passed = test.run()
 			if passed:
 				passed_tests.append(test)
@@ -190,12 +202,12 @@ def run_all_tests(globals):
 
 		test_case.cleanup()
 		color_print("{test_pass}[----------]{} %d %s from %s (%d ms)\n" %(
-			len(test_case.tests), plural("test", test_case.tests),
+			len(test_case_tests), plural("test", test_case.tests),
 			test_case.name, 0))
 
 	color_print("{test_pass}[----------]{} Global test environment cleanup.\n")
 	color_print("{test_pass}[==========]{} %d %s from %d %s ran.\n" %(
-		len(tests), plural("test", tests),
+		len(passed_tests) + len(failed_tests), plural("test", tests),
 		len(test_cases), plural("test case", tests)))
 
 	passed = (len(failed_tests) == 0)

@@ -475,6 +475,50 @@ class Keywords(pyunit.TestCase):
 		"""
 		game = Game()
 
+		# Opponent's hand should not affect conduit
+		game.player2.give("InfestedWhale")
+
+		# Spell: Static Snap
+		# Conduit: Deal 2 damage to a Unit X+1 times.
+		# Play with 0 cards in hand. 2*(0+1) = 2
+		card = game.player1.give("StaticSnap")
+		target = game.player2.give("SunkenGoliath", Zone.PLAY)
+		card.play(targets=[target])
+		self.expect_eq(target.damage, 2)
+
+		# Unit: Thunderblood Pontiff
+		# Conduit: +2X/+2X
+		pontiff = game.player1.give("ThunderbloodPontiff").play()
+		self.expect_eq(pontiff.health, 1)
+		self.expect_eq(pontiff.power, 1)
+
+		# Opponent's hand should not affect conduit
+		game.player2.give("InfestedWhale")
+		game.player2.give("InfestedWhale")
+
+		# Play with 1 cards in hand. 2*(1+1) = 4
+		game.player1.give("InfestedWhale")
+		card = game.player1.give("StaticSnap")
+		target = game.player2.give("SunkenGoliath", Zone.PLAY)
+		card.play(targets=[target])
+		self.expect_eq(target.damage, 4)
+
+		pontiff = game.player1.give("ThunderbloodPontiff").play()
+		self.expect_eq(pontiff.health, 3)
+		self.expect_eq(pontiff.power, 3)
+
+		# Play with 2 cards in hand. 2*(2+1) = 6
+		game.player1.give("InfestedWhale")
+		card = game.player1.give("StaticSnap")
+		target = game.player2.give("SunkenGoliath", Zone.PLAY)
+		card.play(targets=[target])
+		self.expect_eq(target.damage, 6)
+
+		pontiff = game.player1.give("ThunderbloodPontiff").play()
+		self.expect_eq(pontiff.health, 5)
+		self.expect_eq(pontiff.power, 5)
+
+
 	def test_renew(self):
 		"""
 		Renew: Unit heals to full at the start of your turn
@@ -497,7 +541,13 @@ class Keywords(pyunit.TestCase):
 if __name__=="__main__":
 	cards.db.initialize()
 
+	test_list = None
+	if len(sys.argv) > 1:
+		single_test = sys.argv[1]
+		test_list = [single_test]
+
 	#logging.action_log.disable()
-	pyunit.run_all_tests(globals())
+	pyunit.run_all_tests(globals(),
+		test_list=test_list)
 
 

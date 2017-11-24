@@ -4,6 +4,7 @@ from cards.octopi import *
 from cards.aard import *
 from cards.mole import *
 from cards.slug import *
+from cards.eel import *
 from enums import *
 import sys
 import inspect
@@ -122,7 +123,7 @@ if "db" not in globals():
 	db = CardDatabase()
 
 	# Load all cards into the database.
-	modules = ["aard", "octopi", "mole", "slug"]
+	modules = ["aard", "octopi", "mole", "slug", "eel"]
 	for module in modules:
 		for name, obj in inspect.getmembers(sys.modules["cards.%s" %(module)]):
 			#if inspect.isclass(obj):

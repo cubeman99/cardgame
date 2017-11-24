@@ -3,16 +3,23 @@ import operator
 from abc import ABCMeta, abstractmethod
 from entity import *
 from logic.conditions import Condition
+from typing import Any, Union, List, Callable, Iterable, Optional, Set
+
+
+BinaryOp = Callable[[Any, Any], bool]
+
 
 class LazyValue(metaclass=ABCMeta):
 	@abstractmethod
 	def evaluate(self, source):
 		pass
 
+
 # Something that evaluates at runtime.
 class LazyNum(LazyValue):
 	def __init__(self):
 		self.base = 1
+		self.offset = 0
 
 	def evaluate(self, source) -> int:
 		raise NotImplementedError
@@ -38,17 +45,25 @@ class LazyNum(LazyValue):
 		return ret
 
 	def __add__(self, other):
-		ret = copy.copy(self)
-		ret.base += other
-		return ret
+		return LazyNumOperation(operator.add, self, other)
+		#ret = copy.copy(self)
+		#self.offset += other
+		#return ret
+
+	def __sub__(self, other):
+		return LazyNumOperation(operator.sub, self, other)
+		#ret = copy.copy(self)
+		#self.offset -= other
+		#return ret
 
 	def __mul__(self, other):
-		ret = copy.copy(self)
-		ret.base *= other
-		return ret
+		return LazyNumOperation(operator.mul, self, other)
+		#ret = copy.copy(self)
+		#ret.base *= other
+		#return ret
 
 	def num(self, n):
-		return n * self.base
+		return (n * self.base) + self.offset
 
 	def get_entities(self, source):
 		from logic.selector import Selector
@@ -61,6 +76,31 @@ class LazyNum(LazyValue):
 			entities = sum(self.selector.trigger(source), [])
 		return entities
 
+
+class LazyNumOperation(LazyNum):
+	def __init__(self, op: BinaryOp, left, right):
+		super().__init__()
+		self.op = op
+		self.left = left
+		self.right = right
+
+	def evaluate(self, source):
+		left_value = self.left.evaluate(source)\
+			if isinstance(self.left, LazyValue) else self.left
+		right_value = self.right.evaluate(source)\
+			if isinstance(self.right, LazyValue) else self.right
+		return self.op(left_value, right_value)
+
+	def __repr__(self):
+		if self.op.__name__ == "add":
+			infix = "+"
+		elif self.op.__name__ == "sub":
+			infix = "-"
+		elif self.op.__name__ == "mul":
+			infix = "*"
+		else:
+			infix = "UNKNOWN_OP"
+		return "(%r %s %r)" %(self.left, infix, self.right)
 
 class LazyNumEvaluator(Condition):
 	def __init__(self, num, other, cmp):
