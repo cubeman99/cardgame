@@ -2,10 +2,12 @@ from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 from logging import action_log
 from enums import *
-from logic.selector import *
+from logic.events import *
 from logic.lazynum import *
+from logic.selector import *
 from exceptions import *
 from manager import Manager, CardManager
+
 
 def _eval_card(source, card):
 	"""
@@ -35,20 +37,6 @@ def _eval_card(source, card):
 
 	return ret
 
-
-class EventListener:
-	ON = 1
-	AFTER = 2
-
-	def __init__(self, trigger, actions, at):
-		self.trigger = trigger
-		self.actions = actions
-		self.at = at
-		self.once = False
-
-	def __repr__(self):
-		return "On %r: %r" %(self.trigger, self.actions)
-		#return "<EventListener %r>" % (self.trigger)
 
 class ActionMeta(type):
 	def __new__(metacls, name, parents, namespace):
@@ -352,6 +340,7 @@ class Damage(TargetedAction):
 	def invoke(self, source, target, amount):
 		action_log.log("Damaging %r by %d", target, amount)
 		target.hit(source, amount)
+		self.broadcast(source, EventListener.ON, target, amount, source)
 
 class Destroy(TargetedAction):
 	"""
@@ -447,8 +436,12 @@ class Play(GameAction):
 
 		card.targets = targets
 
-		# Move the card into play
-		card.zone = Zone.PLAY
+		# Move the card into play.
+		# IF this card is a spell, then discard it instead.
+		if card.type == CardType.SPELL:
+			card.zone = Zone.DISCARD
+		else:
+			card.zone = Zone.PLAY
 
 		# Broad cast the "On Play" event
 		self.broadcast(player, EventListener.ON, player, card)
@@ -517,6 +510,15 @@ class BeginTurn(GameAction):
 		#source.manager.step(source.next_step, source.next_step)
 		self.broadcast(source, EventListener.ON, player)
 		#source._begin_turn(player)
+
+
+
+class EndTurn(GameAction):
+	PLAYER = ActionArg()
+
+	def invoke(self, source, player):
+		action_log.log("%s ends turn %i", player, source.turn)
+		self.broadcast(source, EventListener.ON, player)
 
 # Aftermath = Triggered when a unit dies.
 class Aftermath(TargetedAction):
@@ -863,6 +865,41 @@ class Choose(GameAction):
 			#action_log.log("%r queues up callback %r with args %r", self, action, str([target] + target_args))
 			self.source.game.queue_actions(self.source, [action], event_args=self._args, event_outputs=[cards])
 
+#------------------------------------------------------------------------------
+# General Actions
+#------------------------------------------------------------------------------
+
+class IfThen(TargetedAction):
+	"""
+	Perform \a then_actions if a condition is true.
+	"""
+	CONDITION = ActionArg()
+	THEN_ACTIONS = ActionArg()
+
+	def invoke(self, source, condition, then_actions):
+		if condition:
+			self.source.game.queue_actions(source, then_actions)
+
+class IfThenElse(TargetedAction):
+	"""
+	Perform \a then_actions if a condition is true, else perform
+	\a else_actions.
+	"""
+	CONDITION = ActionArg()
+	THEN_ACTIONS = ActionArg()
+	ELSE_ACTIONS = ActionArg()
+
+	def invoke(self, source, condition, then_actions):
+		if condition:
+			self.source.game.queue_actions(source, then_actions)
+		else:
+			self.source.game.queue_actions(source, else_actions)
+
+
+#------------------------------------------------------------------------------
+# Custom Actions
+#------------------------------------------------------------------------------
+
 # Custom compound actions
 
 def ChooseAndDiscard(player, count=1):
@@ -883,4 +920,12 @@ def ChooseAndDiscard(player, count=1):
 #	action.name = "ChooseTarget(%r, %r)" %(player, targeted_action)
 #	return action
 
+#------------------------------------------------------------------------------
+# Custom Event Actions
+#------------------------------------------------------------------------------
+
+OWN_TURN_BEGIN = BeginTurn(CONTROLLER)
+TURN_BEGIN = BeginTurn(ALL_PLAYERS)
+OWN_TURN_END = EndTurn(CONTROLLER)
+TURN_END = EndTurn(ALL_PLAYERS)
 

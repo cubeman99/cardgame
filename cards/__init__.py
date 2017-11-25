@@ -93,6 +93,10 @@ class CardDatabase(dict):
 			card.scripts.events.append(
 				Attack(SELF, ALL_PLAYERS).on(
 					ChooseAndDiscard(Attack.DEFENDER)))
+		if card.toxic:
+			card.scripts.events.append(
+				Attack(SELF, ALL_UNITS).on(
+					Alive(Attack.DEFENDER) & Destroy(Attack.DEFENDER)))
 		if hasattr(card_info, "heroic"):
 			card.scripts.update.append(
 				(Count(ALLIED_UNITS - SELF) == 0).then(

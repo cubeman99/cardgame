@@ -93,6 +93,8 @@ class ServerManager:
 		#	payload = self.player_entity(entity)
 		#else:
 		payload = self.full_entity(entity)
+		if entity.id == "RipperPack":
+			print(payload)
 		self.queued_data.append(payload)
 
 	def tag_change(self, entity, tag, value):

@@ -1,8 +1,19 @@
 from enums import *
 from logic.actions import *
 
-OWN_TURN_BEGIN = BeginTurn(CONTROLLER)
-TURN_BEGIN = BeginTurn(ALL_PLAYERS)
 
-#OWN_TURN_END = EndTurn(CONTROLLER)
-#TURN_END = EndTurn(ALL_PLAYERS)
+class EventListener:
+	ON = 1
+	AFTER = 2
+
+	def __init__(self, trigger, actions, at):
+		self.trigger = trigger
+		self.actions = actions
+		self.at = at
+		self.once = False
+
+	def __repr__(self):
+		return "On %r: %r" %(self.trigger, self.actions)
+		#return "<EventListener %r>" % (self.trigger)
+
+

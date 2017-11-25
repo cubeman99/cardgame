@@ -6,6 +6,8 @@ from player import Player
 import cards
 from logic.actions import *
 from logic.selector import *
+from logic.conditions import *
+import logic.lazynum as lazynum
 from utils import *
 from colors import *
 import sys
@@ -148,11 +150,13 @@ class CardTests(pyunit.TestCase):
 		game = Game()
 		target = game.player1.give("OctopiExile", Zone.PLAY)
 		self.expect_eq(len(game.player1.field), 1)
-		game.player1.give("AbyssalSummoning").play(targets=[target])
+		card = game.player1.give("AbyssalSummoning")
+		card.play(targets=[target])
 		self.expect_eq(len(game.player1.field), 1)
 		self.expect_true(target.dead)
 		self.expect_eq(game.player1.field[0].power, 5)
 		self.expect_eq(game.player1.field[0].health, 5)
+		self.expect_eq(card.zone, Zone.DISCARD)
 
 		# Play without corrupt target
 		game = Game()
@@ -256,7 +260,24 @@ class CardTests(pyunit.TestCase):
 		self.expect_true(corrupt_target.dead)
 		self.expect_true(damage_target.dead)
 
+	def test_redmaw_berserker(self):
+		"""
+		Unit: Redmaw Berserker
+		When this unit takes damage, destroy it at the end of the turn
+		"""
+		game = Game()
+		berserker = game.player1.give("RedmawBerserker").play()
+		attacker = game.player2.give("PackExile").play()
 
+		# Damage the berserker and verify it receives a buff
+		self.expect_eq(len(berserker.buffs), 0)
+		attacker.attack(berserker)
+		self.expect_eq(len(berserker.buffs), 1)
+
+		# End the turn and verify the berserker is destroyed
+		self.expect_false(berserker.dead)
+		game.end_turn(game.player1)
+		self.expect_true(berserker.dead)
 
 
 
@@ -611,6 +632,18 @@ class Keywords(pyunit.TestCase):
 		survive.
 		"""
 		game = Game()
+		attacker = game.player1.give("BreweryServant", Zone.PLAY) # 1/2 Toxic
+		defender = game.player2.give("RageheartThug", Zone.PLAY) # 2/4
+
+		# Attack, defender should drop to 1 health
+		#attacker.attack(defender)
+		#self.expect_false(defender.dead)
+		#self.expect_eq(defender.health, 1)
+
+		# Attack again, defender should die
+		#attacker.attack(defender)
+		#self.expect_true(defender.dead)
+
 
 	def test_conduit(self):
 		"""
@@ -681,6 +714,87 @@ class Keywords(pyunit.TestCase):
 		reinforce card, gain an effect.
 		"""
 		game = Game()
+
+class Logic(pyunit.TestCase):
+
+	def test_actions(self):
+		game = Game()
+		a1 = game.player1.give("OctopiExile", Zone.PLAY)
+		a2 = game.player1.give("OctopiExile", Zone.PLAY)
+		e1 = game.player2.give("OctopiExile", Zone.PLAY)
+		e2 = game.player2.give("OctopiExile", Zone.PLAY)
+		e3 = game.player2.give("OctopiExile", Zone.PLAY)
+
+		lzy = Count(ALLIED_UNITS)
+		val = 2
+
+		self.expect_eq(
+			lzy.evaluate(game.player1),
+			val)
+		self.expect_eq(
+			(lzy + 1).evaluate(game.player1),
+			(val + 1))
+		self.expect_eq(
+			(9 + lzy).evaluate(game.player1),
+			(9 + val))
+		self.expect_eq(
+			(lzy + lzy).evaluate(game.player1),
+			(val + val))
+		self.expect_eq(
+			(lzy - 1).evaluate(game.player1),
+			(val - 1))
+		self.expect_eq(
+			(7 - lzy).evaluate(game.player1),
+			(7 - val))
+		self.expect_eq(
+			(lzy - lzy).evaluate(game.player1),
+			(val - val))
+		self.expect_eq(
+			(lzy * 3).evaluate(game.player1),
+			(val * 3))
+		self.expect_eq(
+			(4 * lzy).evaluate(game.player1),
+			(4 * val))
+		self.expect_eq(
+			(lzy * lzy).evaluate(game.player1),
+			(val * val))
+		self.expect_eq(
+			(-lzy).evaluate(game.player1),
+			(-val))
+
+		self.expect_eq(
+			(lzy == 2).evaluate(game.player1),
+			(val == 2))
+		self.expect_eq(
+			(lzy != 2).evaluate(game.player1),
+			(val != 2))
+		self.expect_eq(
+			(lzy <= 2).evaluate(game.player1),
+			(val <= 2))
+		self.expect_eq(
+			((lzy <= 2) & ~(lzy == 2)).evaluate(game.player1),
+			((val <= 2) and not (val == 2)))
+
+
+		print("%r" %((lzy <= 2) & ~(lzy == 2)))
+		self.expect_true((lzy == lzy).evaluate(game.player1))
+		self.expect_false((lzy != lzy).evaluate(game.player1))
+
+		"""self.expect_false((lazy < 2).evaluate(game.player1))
+		self.expect_false((lazy > 2).evaluate(game.player1))
+		self.expect_false((lazy >= 3).evaluate(game.player1))
+		self.expect_false((lazy <= 1).evaluate(game.player1))
+		self.expect_false((lazy == 3).evaluate(game.player1))
+		self.expect_false((lazy != 2).evaluate(game.player1))"""
+
+		#self.expect_eq(True, Alive(ENEMY_UNITS).evaluate(game.player1))
+		#self.expect_eq(True, Alive(ENEMY_UNITS).evaluate(game.player1))
+		#self.expect_eq(False, Dead(ENEMY_UNITS).evaluate(game.player1))
+		#self.expect_eq(True, Exists(ENEMY_UNITS).evaluate(game.player1))
+		#self.expect_eq(False, Exists(IN_DISCARD).evaluate(game.player1))
+		#self.expect_eq(ALLIED_UNITS.evaluate(game.player1), [a])
+		#self.expect_eq(ENEMY_UNITS.evaluate(game.player1), [b, c])
+
 
 if __name__=="__main__":
 	cards.db.initialize()

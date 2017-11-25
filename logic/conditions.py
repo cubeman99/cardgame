@@ -2,11 +2,12 @@ import copy
 import re
 from enums import *
 
+
 class Condition:
 	"""
 	Lazily evaluate a condition at runtime.
 
-	Evaluators must implement the check() method, which determines whether they
+	Condition must implement the check() method, which determines whether they
 	evaluate to True in the current state.
 	"""
 	def __init__(self):
@@ -59,6 +60,7 @@ class Condition:
 		Evaluates the board state from `source` and returns an iterable of
 		Actions as a result.
 		"""
+		return self.check(source)
 		ret = self.check(source)
 		if self._neg:
 			ret = not ret

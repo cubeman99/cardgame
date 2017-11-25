@@ -40,6 +40,10 @@ class Selector:
 	Set operations preserve ordering (necessary for cards like Echo of
 	Medivh, where ordering matters)
 	"""
+
+	def evaluate(self, source):
+		return self.eval(source.game, source)
+
 	def eval(self, entities: List[BaseEntity], source: BaseEntity) -> List[BaseEntity]:
 		return entities
 
@@ -258,9 +262,10 @@ SELF			= FuncSelector(lambda entities, source: [source], name="SELF")
 ATTACKER		= FuncSelector(lambda entities, source: [source.attacker], name="ATTACKER")
 DEFENDER		= FuncSelector(lambda entities, source: [source.defender], name="DEFENDER")
 SOURCE_OF_DEATH	= FuncSelector(lambda entities, source: [source.source_of_death], name="SOURCE_OF_DEATH")
+OWNER			= FuncSelector(lambda entities, source: [source.owner], name="SOURCE_OF_DEATH")
+
 
 class Target(Selector):
-
 	def __init__(self, index=0):
 		self.index = index
 		self.name = "TARGET[%d]" %(self.index)

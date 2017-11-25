@@ -7,6 +7,18 @@ from typing import Any, Union, List, Callable, Iterable, Optional, Set
 
 
 BinaryOp = Callable[[Any, Any], bool]
+UnaryOp = Callable[[Any], bool]
+
+def evaluate(value, source):
+	if isinstance(value, LazyValue):
+		return value.evaluate(source)
+	elif isinstance(value, Condition):
+		return value.evaluate(source)
+	elif isinstance(value, Selector):
+		return value.eval(source)
+	else:
+		return value
+
 
 
 class LazyValue(metaclass=ABCMeta):
@@ -14,10 +26,24 @@ class LazyValue(metaclass=ABCMeta):
 	def evaluate(self, source):
 		pass
 
+	def eval(self, game, source):
+		return self.evaluate(source)
+
+
+def _and(left, right):
+	return left and right
+def _or(left, right):
+	return left or right
+def _not(value):
+	return not value
 
 # Something that evaluates at runtime.
 class LazyNum(LazyValue):
 	def __init__(self):
+		pass
+
+	# TODO: remove this
+	def then(self, _):
 		pass
 
 	def evaluate(self, source) -> int:
@@ -28,25 +54,64 @@ class LazyNum(LazyValue):
 			if isinstance(other, (int, LazyNum)):
 				# When comparing a LazyNum with an int, turn it into an
 				# Evaluator that compares the int to the result of the LazyNum
-				return LazyNumEvaluator(self, other, getattr(operator, op))
+				return LazyNumEvaluator(self, other, op)
 			return getattr(super(), "__%s__" % (op))(other)
 		return func
 
-	__eq__ = _cmp("eq")
-	__ge__ = _cmp("ge")
-	__gt__ = _cmp("gt")
-	__le__ = _cmp("le")
-	__lt__ = _cmp("lt")
+	#__eq__ = _cmp(operator.eq)
+	#__ge__ = _cmp(operator.ge)
+	#__gt__ = _cmp(operator.gt)
+	#__le__ = _cmp(operator.le)
+	#__lt__ = _cmp(operator.lt)
 
+	# Unary arithmetic operators
 	def __neg__(self):
-		# TODO: should do negation properly
-		return LazyNumOperation(operator.mul, -1, self)
+		# TODO: should do unary operator properly
+		return LazyUnaryOperation(operator.neg, self)
+
+	# Unary comparison operators
+	def __invert__(self):
+		# TODO: should do unary operator properly
+		return LazyUnaryOperation(_not, self)
+
+
+	# Binary arithmetic operators
 	def __add__(self, other):
 		return LazyNumOperation(operator.add, self, other)
 	def __sub__(self, other):
 		return LazyNumOperation(operator.sub, self, other)
 	def __mul__(self, other):
 		return LazyNumOperation(operator.mul, self, other)
+	def __radd__(self, other):
+		return LazyNumOperation(operator.add, other, self)
+	def __rsub__(self, other):
+		return LazyNumOperation(operator.sub, other, self)
+	def __rmul__(self, other):
+		return LazyNumOperation(operator.mul, other, self)
+
+	# Binary comparison operators
+	def __eq__(self, other):
+		return LazyNumOperation(operator.eq, self, other)
+	def __ne__(self, other):
+		return LazyNumOperation(operator.ne, self, other)
+	def __ge__(self, other):
+		return LazyNumOperation(operator.ge, self, other)
+	def __gt__(self, other):
+		return LazyNumOperation(operator.gt, self, other)
+	def __le__(self, other):
+		return LazyNumOperation(operator.le, self, other)
+	def __lt__(self, other):
+		return LazyNumOperation(operator.lt, self, other)
+
+	# Binary boolean operators
+	def __and__(self, other):
+		return LazyNumOperation(_and, self, other)
+	def __or__(self, other):
+		return LazyNumOperation(_or, self, other)
+	def __rand__(self, other):
+		return LazyNumOperation(_and, other, self)
+	def __ror__(self, other):
+		return LazyNumOperation(_or, other, self)
 
 	def get_entities(self, source):
 		from logic.selector import Selector
@@ -59,6 +124,46 @@ class LazyNum(LazyValue):
 			entities = sum(self.selector.trigger(source), [])
 		return entities
 
+operator_symbols = {
+	"add": "+",
+	"sub": "-",
+	"mul": "-",
+	"eq": "==",
+	"ne": "!=",
+	"ge": ">=",
+	"le": "<=",
+	"gt": ">",
+	"lt": "<",
+	"_and": "&",
+	"_or": "|",
+	"_not": "!",
+	"neg": "-",
+}
+
+operator_inversions = {
+	operator.ne: operator.eq,
+	operator.eq: operator.ne,
+	operator.le: operator.gt,
+	operator.lt: operator.ge,
+	operator.gt: operator.le,
+	operator.ge: operator.lt,
+}
+
+class LazyUnaryOperation(LazyNum):
+	def __init__(self, op: UnaryOp, value):
+		super().__init__()
+		self.op = op
+		self.value = value
+
+	def evaluate(self, source):
+		value = self.value.evaluate(source)\
+			if isinstance(self.value, LazyValue) else self.value
+		return self.op(value)
+
+	def __repr__(self):
+		symbol = operator_symbols.get(self.op.__name__,
+			"UNKNOWN_OP(%s)" %(self.op.__name__))
+		return "%s%r" %(symbol, self.value)
 
 class LazyNumOperation(LazyNum):
 	def __init__(self, op: BinaryOp, left, right):
@@ -75,15 +180,24 @@ class LazyNumOperation(LazyNum):
 		return self.op(left_value, right_value)
 
 	def __repr__(self):
-		if self.op.__name__ == "add":
-			infix = "+"
-		elif self.op.__name__ == "sub":
-			infix = "-"
-		elif self.op.__name__ == "mul":
-			infix = "*"
-		else:
-			infix = "UNKNOWN_OP"
+		infix = operator_symbols.get(self.op.__name__,
+			"UNKNOWN_OP(%s)" %(self.op.__name__))
 		return "(%r %s %r)" %(self.left, infix, self.right)
+
+	def __invert__(self):
+		"""
+		Try to fix up redundant inversions:
+		For example:
+		  == will become !=
+		  <= will become >
+		  > will become <=
+		  etc.
+		"""
+		inverted_op = operator_inversions.get(self.op, None)
+		if inverted_op != None:
+			self.op = inverted_op
+			return self
+		return super().__invert__()
 
 class LazyNumEvaluator(Condition):
 	def __init__(self, num, other, cmp):

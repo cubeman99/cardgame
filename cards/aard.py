@@ -36,7 +36,11 @@ class RedmawBerserker:
 	tribe	= Tribe.AARD
 	cost	= (0, 0)
 	stats	= (4, 4)
-	#events	= TODO
+	events	= Damage(SELF).on(Buff(SELF, "RedmawBerserker_Buff"))
+
+class RedmawBerserker_Buff:
+	type	= CardType.EFFECT
+	events	= EndTurn(ALL_PLAYERS).on(Destroy(OWNER))
 
 class BlackbloodBruiser:
 	name	= "Blackblood Bruiser"

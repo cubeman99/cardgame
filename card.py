@@ -412,6 +412,10 @@ class Effect(BaseCard):
 		#return i;
 		#return getattr(self.data.scripts, attr, lambda s, x: x)(self, i)
 
+	@property
+	def delayed_destruction(self):
+		return False
+
 	def _set_zone(self, zone):
 		if zone == Zone.PLAY:
 			self.owner.buffs.append(self)

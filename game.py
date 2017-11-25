@@ -299,11 +299,13 @@ class Game(Entity):
 
 	def begin_turn(self, player):
 		ret = self.queue_actions(self, [BeginTurn(player)])
+		self.process_deaths()
 		self.manager.turn(player)
 		return ret
 
-	def end_turn(self):
-		return self.queue_actions(self, [EndTurn(self.current_player)])
+	def end_turn(self, player):
+		self.queue_actions(self, [EndTurn(player)])
+		self.process_deaths()
 
 	def end_step(self):
 		if self.step == Step.DECLARE:
@@ -328,12 +330,15 @@ class Game(Entity):
 			print("Entering play step for %s" %(self.current_player))
 
 		elif self.step == Step.PLAY:
+			self.end_turn(self.current_player)
+
 			self.step = Step.UNFLIP
 			self.current_player = self.current_player.opponent
 			self.choosing_player = None
 			self.step_player = None
 			self.turn += 1
 			print("Entering unflip step for %s" %(self.current_player))
+			self.begin_turn(self.current_player)
 
 		# Unflip step happens automatically
 		if self.step == Step.UNFLIP:
