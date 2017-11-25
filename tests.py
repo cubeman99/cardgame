@@ -717,7 +717,7 @@ class Keywords(pyunit.TestCase):
 
 class Logic(pyunit.TestCase):
 
-	def test_actions(self):
+	def test_lazy_num(self):
 		game = Game()
 		a1 = game.player1.give("OctopiExile", Zone.PLAY)
 		a2 = game.player1.give("OctopiExile", Zone.PLAY)
@@ -729,56 +729,60 @@ class Logic(pyunit.TestCase):
 		val = 2
 
 		self.expect_eq(
-			lzy.evaluate(game.player1),
+			lzy.eval(game.player1),
 			val)
 		self.expect_eq(
-			(lzy + 1).evaluate(game.player1),
+			(lzy + 1).eval(game.player1),
 			(val + 1))
 		self.expect_eq(
-			(9 + lzy).evaluate(game.player1),
+			(9 + lzy).eval(game.player1),
 			(9 + val))
 		self.expect_eq(
-			(lzy + lzy).evaluate(game.player1),
+			(lzy + lzy).eval(game.player1),
 			(val + val))
 		self.expect_eq(
-			(lzy - 1).evaluate(game.player1),
+			(lzy - 1).eval(game.player1),
 			(val - 1))
 		self.expect_eq(
-			(7 - lzy).evaluate(game.player1),
+			(7 - lzy).eval(game.player1),
 			(7 - val))
 		self.expect_eq(
-			(lzy - lzy).evaluate(game.player1),
+			(lzy - lzy).eval(game.player1),
 			(val - val))
 		self.expect_eq(
-			(lzy * 3).evaluate(game.player1),
+			(lzy * 3).eval(game.player1),
 			(val * 3))
 		self.expect_eq(
-			(4 * lzy).evaluate(game.player1),
+			(4 * lzy).eval(game.player1),
 			(4 * val))
 		self.expect_eq(
-			(lzy * lzy).evaluate(game.player1),
+			(lzy * lzy).eval(game.player1),
 			(val * val))
 		self.expect_eq(
-			(-lzy).evaluate(game.player1),
+			(-lzy).eval(game.player1),
 			(-val))
-
 		self.expect_eq(
-			(lzy == 2).evaluate(game.player1),
+			(lzy == 2).eval(game.player1),
 			(val == 2))
 		self.expect_eq(
-			(lzy != 2).evaluate(game.player1),
+			(lzy != 2).eval(game.player1),
 			(val != 2))
 		self.expect_eq(
-			(lzy <= 2).evaluate(game.player1),
+			(lzy <= 2).eval(game.player1),
 			(val <= 2))
 		self.expect_eq(
-			((lzy <= 2) & ~(lzy == 2)).evaluate(game.player1),
+			((lzy <= 2) & ~(lzy == 2)).eval(game.player1),
 			((val <= 2) and not (val == 2)))
 
-
 		print("%r" %((lzy <= 2) & ~(lzy == 2)))
-		self.expect_true((lzy == lzy).evaluate(game.player1))
-		self.expect_false((lzy != lzy).evaluate(game.player1))
+		self.expect_true((lzy == lzy).eval(game.player1))
+		self.expect_false((lzy != lzy).eval(game.player1))
+
+		self.expect_true(Alive(ALLIED_UNITS).eval(game.player1))
+		self.expect_true(Alive(ALLIED_UNITS).eval(game.player2))
+		self.expect_true(Exists(ALLIED_UNITS).eval(game.player1))
+		self.expect_false(Exists(IN_DISCARD).eval(game.player1))
+		self.expect_true((~Exists(IN_DISCARD)).eval(game.player1))
 
 		"""self.expect_false((lazy < 2).evaluate(game.player1))
 		self.expect_false((lazy > 2).evaluate(game.player1))
@@ -795,6 +799,13 @@ class Logic(pyunit.TestCase):
 		#self.expect_eq(ALLIED_UNITS.evaluate(game.player1), [a])
 		#self.expect_eq(ENEMY_UNITS.evaluate(game.player1), [b, c])
 
+	def test_actions(self):
+		game = Game()
+		a = game.player1.give("OctopiExile")
+		b = game.player2.give("OctopiExile")
+		a.play()
+		b.play()
+		a.attack(b)
 
 if __name__=="__main__":
 	cards.db.initialize()

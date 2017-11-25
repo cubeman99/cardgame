@@ -7,7 +7,7 @@ from logic.lazynum import *
 from logic.selector import *
 from exceptions import *
 from manager import Manager, CardManager
-
+from utils import listify
 
 def _eval_card(source, card):
 	"""
@@ -17,10 +17,9 @@ def _eval_card(source, card):
 	- The string ID of the card (the card is created)
 	- A LazyValue (the card is dynamically created)
 	"""
-	if isinstance(card, LazyValue):
-		card = card.evaluate(source)
-
-	if isinstance(card, Action):
+	if isinstance(card, LazyNum):
+		card = card.eval(source)
+	elif isinstance(card, Action):
 		card = card.trigger(source)[0]
 
 	if not isinstance(card, list):
@@ -55,7 +54,7 @@ class ActionMeta(type):
 	def __prepare__(metacls, name, bases):
 		return OrderedDict()
 
-class ActionArg(LazyValue):
+class ActionArg(LazyNum):
 	"""Input parameter that is evaluated upon invoking the action."""
 
 	def _setup(self, index, name, owner):
@@ -158,6 +157,17 @@ class Action(metaclass=ActionMeta):
 	def get_args(self, source):
 		return self._args
 
+	def get_args(self, source):
+		args = []
+		for value in self._args:
+			if isinstance(value, Selector):
+				args.append(value.select(source.game, source))
+			elif isinstance(value, LazyNum):
+				args.append(value.eval(source))
+			else:
+				args.append(value)
+		return args
+
 	def matches(self, source, args):
 		"""
 		Check if the arguments from this action match the arguments from
@@ -174,11 +184,14 @@ class Action(metaclass=ActionMeta):
 				res = match(arg)
 				if not res:
 					return False
-			else:
+			elif isinstance(match, Selector):
 				# this stuff is stupidslow
-				res = match.eval([arg], source)
+				res = match.select([arg], source)
 				if not res or res[0] is not arg:
 					return False
+			else:
+				raise NotImplementedError
+				return False
 		return True
 
 class GameAction(Action):
@@ -208,52 +221,38 @@ class TargetedAction(Action):
 		self.times = value
 		return self
 
-	"""def eval(self, selector, source):
-		if isinstance(selector, Entity):
-			return [selector]
-		else:
-			return selector.eval(source.game, source)"""
-
 	def get_target_args(self, source, target):
 		ret = []
 		for k, v in zip(self.ARGS[1:], self._args[1:]):
-			if isinstance(v, Selector):
-				# evaluate Selector arguments
-				v = v.eval(source.game, source)
-			elif isinstance(v, LazyValue):
-				v = v.evaluate(source)
+			if isinstance(v, LazyNum):
+				v = v.eval(source)
 			elif isinstance(k, CardArg):
 				v = _eval_card(source, v)
 			ret.append(v)
 		return ret
 
 	def get_targets(self, source, t):
-		if isinstance(t, Entity):
-			ret = t
-		elif isinstance(t, LazyValue):
-			ret = t.evaluate(source)
+		if isinstance(t, LazyNum):
+			ret = t.eval(source)
 		elif t == None:
 			return [None]
 		else:
-			ret = t.eval(source.game, source)
+			ret = t
 		if not ret:
 			return []
-		if not hasattr(ret, "__iter__"):
-			# Bit of a hack to ensure we always get a list back
-			ret = [ret]
-		return ret
+		return listify(ret)
 
 	def trigger(self, source):
 		ret = []
 
 		if self.source is not None:
-			source = self.source.eval(source.game, source)
+			source = self.source.eval(source)
 			assert len(source) == 1
 			source = source[0]
 
 		times = self.times
-		if isinstance(times, LazyValue):
-			times = times.evaluate(source)
+		if isinstance(times, LazyNum):
+			times = times.eval(source)
 		#elif isinstance(times, Action):
 		#	times = times.trigger(source)[0]
 
@@ -382,10 +381,6 @@ class Summon(TargetedAction):
 	"""
 	TARGET = ActionArg()
 	CARD = CardArg()
-
-	def get_args(self, source):
-		ret = super().get_args(source)
-		return ret
 
 	def invoke(self, source, target, cards, token=False):
 		#log.info("%s summons %r", target, cards)
@@ -611,11 +606,12 @@ class Inspire(TargetedAction):
 
 
 
-class Copy(LazyValue):
+class Copy(LazyNum):
 	"""
 	Lazily return a list of copies of the target
 	"""
 	def __init__(self, selector):
+		super().__init__(selector)
 		self.selector = selector
 
 	def __repr__(self):
@@ -628,15 +624,9 @@ class Copy(LazyValue):
 		action_log.log("Creating a copy of %r", entity)
 		return source.controller.card(entity.id, source)
 
-	def evaluate(self, source) -> [str]:
-		if isinstance(self.selector, LazyValue):
-			entities = [self.selector.evaluate(source)]
-		else:
-			entities = self.selector.eval(source.game, source)
-
+	def evaluate(self, source, entities) -> [str]:
 		if not isinstance(entities, list):
 			entities = [entities]
-
 		return [self.copy(source, e) for e in entities]
 
 
@@ -670,8 +660,8 @@ class Buff(TargetedAction):
 		ret = []
 		for buff in buffs:
 			for k, v in kwargs.items():
-				if isinstance(v, LazyValue):
-					v = v.evaluate(source)
+				if isinstance(v, LazyNum):
+					v = v.eval(source)
 				setattr(buff, k, v)
 			ret.append(buff.apply(target))
 		return ret
@@ -740,7 +730,7 @@ class Refresh:
 		self.buff = buff
 
 	def trigger(self, source):
-		entities = self.selector.eval(source.game, source)
+		entities = self.selector.select(source.game, source)
 		for entity in entities:
 			if self.buff:
 				entity.refresh_buff(source, self.buff)
@@ -748,7 +738,7 @@ class Refresh:
 				tags = {}
 				for tag, value in self.tags.items():
 					if not isinstance(value, int) and not callable(value):
-						value = value.evaluate(source)
+						value = value.eval(source)
 					tags[tag] = value
 
 				entity.refresh_tags(source, tags)
@@ -758,7 +748,7 @@ class Refresh:
 
 
 
-class ActionOutput(LazyValue):
+class ActionOutput(LazyNum):
 	def __repr__(self):
 		return "<%s>" %(self.__class__.__name__)
 		#return "<%s.%s>" % (self.owner.__name__, self.name)
@@ -797,19 +787,20 @@ class Choose(GameAction):
 		# Evaluate the player argument.
 		player = self._args[0]
 		if isinstance(player, Selector):
-			player = player.eval(source.game.players, source)
+			#player = player.eval(source.game.players, source) TODO: bring back entities arg
+			player = player.eval(source)
 			assert len(player) == 1
 			player = player[0]
-		elif isinstance(player, LazyValue):
-			player = player.evaluate(source)
+		elif isinstance(player, LazyNum):
+			player = player.eval(source)
 			assert player != None
 
 		# Evaluate the choice list argument.
 		cards = self._args[1]
 		if isinstance(cards, Selector):
-			cards = cards.eval(source.game, source)
-		elif isinstance(cards, LazyValue):
-			cards = cards.evaluate(source)
+			cards = cards.eval(source)
+		elif isinstance(cards, LazyNum):
+			cards = cards.eval(source)
 
 		count = 1
 		if len(self._args) >= 3:
@@ -869,7 +860,7 @@ class Choose(GameAction):
 # General Actions
 #------------------------------------------------------------------------------
 
-class IfThen(TargetedAction):
+class IfThen(GameAction):
 	"""
 	Perform \a then_actions if a condition is true.
 	"""
@@ -878,9 +869,9 @@ class IfThen(TargetedAction):
 
 	def invoke(self, source, condition, then_actions):
 		if condition:
-			self.source.game.queue_actions(source, then_actions)
+			source.game.queue_actions(source, listify(then_actions))
 
-class IfThenElse(TargetedAction):
+class IfThenElse(GameAction):
 	"""
 	Perform \a then_actions if a condition is true, else perform
 	\a else_actions.
@@ -891,9 +882,9 @@ class IfThenElse(TargetedAction):
 
 	def invoke(self, source, condition, then_actions):
 		if condition:
-			self.source.game.queue_actions(source, then_actions)
+			source.game.queue_actions(source, then_actions)
 		else:
-			self.source.game.queue_actions(source, else_actions)
+			source.game.queue_actions(source, else_actions)
 
 
 #------------------------------------------------------------------------------

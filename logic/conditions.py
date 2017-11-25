@@ -1,6 +1,8 @@
 import copy
 import re
 from enums import *
+from logic.lazynum import LazyNum
+from utils import listify
 
 
 class Condition:
@@ -84,48 +86,37 @@ class Condition:
 # Conditions
 #------------------------------------------------------------------------------
 
-class Dead(Condition):
+class Dead(LazyNum):
 	"""
 	Evaluates to True if every target in \a selector is dead
 	"""
 	text = "{selector} is dead"
 
-	def __init__(self, selector):
-		super().__init__()
-		self.selector = selector
-
-	def check(self, source):
-		for target in self.selector.eval(source.game, source):
+	def evaluate(self, source, selector):
+		for target in listify(selector):
 			if not target.dead:
 				return False
 		return True
 
-class Alive(Condition):
+
+class Alive(LazyNum):
 	"""
-	Evaluates to True if every target in \a selector is alive
+	Evaluates to True if every target in \a selector is alive.
 	"""
 	text = "{selector} is alive"
 
-	def __init__(self, selector):
-		super().__init__()
-		self.selector = selector
-
-	def check(self, source):
-		for target in self.selector.eval(source.game, source):
+	def evaluate(self, source, selector):
+		for target in listify(selector):
 			if target.dead:
 				return False
 		return True
 
-class Exists(Condition):
+class Exists(LazyNum):
 	"""
 	Evaluates to True if \a selector has a match.
 	"""
-	def __init__(self, selector, count=1):
-		super().__init__()
-		self.selector = selector
-
-	def check(self, source):
-		return bool(len(self.selector.eval(source.game, source)))
+	def evaluate(self, source, selector, count=1):
+		return bool(len(selector) >= count)
 
 
 IfExists = Exists

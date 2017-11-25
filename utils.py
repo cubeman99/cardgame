@@ -3,6 +3,16 @@ import sys
 
 TERMINAL_WIDTH = 110
 
+
+def listify(obj):
+	if obj != None:
+		if not hasattr(obj, "__iter__"):
+			return [obj]
+		else:
+			return obj
+	return []
+
+
 def print_in_columns(items, spacing=2, left_padding=2):
 
 	column_widths = [0]

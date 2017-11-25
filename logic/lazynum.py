@@ -2,7 +2,6 @@ import copy
 import operator
 from abc import ABCMeta, abstractmethod
 from entity import *
-from logic.conditions import Condition
 from typing import Any, Union, List, Callable, Iterable, Optional, Set
 
 
@@ -39,8 +38,29 @@ def _not(value):
 
 # Something that evaluates at runtime.
 class LazyNum(LazyValue):
-	def __init__(self):
-		pass
+	def __init__(self, *args):
+		self._args = args
+
+	def eval(self, source):
+		from logic.selector import Selector
+		args = []
+		for value in self._args:
+			if isinstance(value, Selector):
+				args.append(value.select(source.game, source))
+			elif isinstance(value, LazyNum):
+				args.append(value.eval(source))
+			else:
+				args.append(value)
+		return self.evaluate(source, *args)
+
+	def __repr__(self):
+		text = "%s(" %(self.__class__.__name__)
+		for i in range(0, len(self._args)):
+			if i > 0:
+				text += ", "
+			text += "%r" %(self._args[i])
+		text += ")"
+		return text
 
 	# TODO: remove this
 	def then(self, _):
@@ -116,7 +136,7 @@ class LazyNum(LazyValue):
 	def get_entities(self, source):
 		from logic.selector import Selector
 		if isinstance(self.selector, Selector):
-			entities = self.selector.eval(source.game, source)
+			entities = self.selector.select(source.game, source)
 		elif isinstance(self.selector, LazyValue):
 			entities = [self.selector.evaluate(source)]
 		else:
@@ -151,13 +171,11 @@ operator_inversions = {
 
 class LazyUnaryOperation(LazyNum):
 	def __init__(self, op: UnaryOp, value):
-		super().__init__()
+		super().__init__(value)
 		self.op = op
 		self.value = value
 
-	def evaluate(self, source):
-		value = self.value.evaluate(source)\
-			if isinstance(self.value, LazyValue) else self.value
+	def evaluate(self, source, value):
 		return self.op(value)
 
 	def __repr__(self):
@@ -167,17 +185,13 @@ class LazyUnaryOperation(LazyNum):
 
 class LazyNumOperation(LazyNum):
 	def __init__(self, op: BinaryOp, left, right):
-		super().__init__()
+		super().__init__(left, right)
 		self.op = op
 		self.left = left
 		self.right = right
 
-	def evaluate(self, source):
-		left_value = self.left.evaluate(source)\
-			if isinstance(self.left, LazyValue) else self.left
-		right_value = self.right.evaluate(source)\
-			if isinstance(self.right, LazyValue) else self.right
-		return self.op(left_value, right_value)
+	def evaluate(self, source, left, right):
+		return self.op(left, right)
 
 	def __repr__(self):
 		infix = operator_symbols.get(self.op.__name__,
@@ -199,36 +213,13 @@ class LazyNumOperation(LazyNum):
 			return self
 		return super().__invert__()
 
-class LazyNumEvaluator(Condition):
-	def __init__(self, num, other, cmp):
-		super().__init__()
-		self.num = num
-		self.other = other
-		self.cmp = cmp
-
-	def __repr__(self):
-		return "%s(%r, %r)" % (self.cmp.__name__, self.num, self.other)
-
-	def check(self, source):
-		num = self.num.evaluate(source)
-		other = self.other
-		if isinstance(other, LazyNum):
-			other = other.evaluate(source)
-		return self.cmp(num, other)
 
 class Count(LazyNum):
 	"""
 	Lazily count the matches in a selector
 	"""
-	def __init__(self, selector):
-		super().__init__()
-		self.selector = selector
-
-	def __repr__(self):
-		return "%s(%r)" % (self.__class__.__name__, self.selector)
-
-	def evaluate(self, source):
-		return len(self.get_entities(source))
+	def evaluate(self, source, selector):
+		return len(selector)
 
 
 class OpAttr(LazyNum):

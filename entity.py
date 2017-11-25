@@ -54,6 +54,8 @@ class BaseEntity(object):
 		actions = getattr(self.data.scripts, name)
 		if callable(actions):
 			actions = actions(self)
+		if actions == None:
+			return []
 		return actions
 
 	def log(self, message, *args):

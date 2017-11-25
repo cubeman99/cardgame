@@ -13,7 +13,7 @@ BinaryOp = Callable[[Any, Any], bool]
 
 
 
-class Selector:
+class Selector(LazyNum):
 	name = None
 
 	def __repr__(self):
@@ -41,11 +41,11 @@ class Selector:
 	Medivh, where ordering matters)
 	"""
 
-	def evaluate(self, source):
-		return self.eval(source.game, source)
-
-	def eval(self, entities: List[BaseEntity], source: BaseEntity) -> List[BaseEntity]:
+	def select(self, entities: List[BaseEntity], source: BaseEntity) -> List[BaseEntity]:
 		return entities
+
+	def eval(self, source):
+		return self.select(source.game, source)
 
 	def __add__(self, other: SelectorLike) -> "Selector":
 		return SetOpSelector(operator.and_, self, other)
@@ -86,7 +86,7 @@ class EnumSelector(Selector):
 		self.tag_enum = tag_enum
 		self.name = "<%s>" %(self.tag_enum.name)
 
-	def eval(self, entities, source):
+	def select(self, entities, source):
 		if not self.tag_enum or not hasattr(self.tag_enum, "test"):
 			raise RuntimeError("Unsupported enum type {}".format(str(self.tag_enum)))
 		return [e for e in entities if self.tag_enum.test(e, source)]
@@ -128,7 +128,7 @@ class ComparisonSelector(Selector):
 		self.left = left
 		self.right = right
 
-	def eval(self, entities, source):
+	def select(self, entities, source):
 		right_value = (self.right.evaluate(source)
 		   if isinstance(self.right, LazyValue) else self.right)
 		return [e for e in entities if
@@ -153,8 +153,8 @@ class ComparisonSelector(Selector):
 
 class SetOpSelector(Selector):
 	def __init__(self, op: Callable, left: Selector, right: SelectorLike):
-		if isinstance(right, LazyValue):
-			right = LazyValueSelector(right)
+		#if isinstance(right, LazyValue):
+		#	right = LazyValueSelector(right)
 		self.op = op
 		self.left = left
 		self.right = right
@@ -163,9 +163,9 @@ class SetOpSelector(Selector):
 	def _entity_id_set(entities: Iterable[BaseEntity]) -> Set[BaseEntity]:
 		return set(e.entity_id for e in entities if e)
 
-	def eval(self, entities, source):
-		left_children = self.left.eval(entities, source)
-		right_children = self.right.eval(entities, source)
+	def select(self, entities, source):
+		left_children = self.left.select(entities, source)
+		right_children = self.right.select(entities, source)
 		result_entity_ids = self.op(self._entity_id_set(left_children),
 									self._entity_id_set(right_children))
 		# Preserve input ordering and multiplicity
@@ -198,7 +198,7 @@ class AttrValue(SelectorEntityValue):
 		else:
 			return "%s" %(self.tag.name)
 
-	#def eval(self, source):
+	#def select(self, source):
 	#	return getattr(source, self.tag)
 
 	def value(self, entity, source):
@@ -242,7 +242,7 @@ class FuncSelector(Selector):
 		self.func = func
 		self.name = name if name else "<%s>" %(self.__class__.__name__)
 
-	def eval(self, entities, source):
+	def select(self, entities, source):
 		return self.func(entities, source)
 
 # Enum tests
@@ -270,7 +270,7 @@ class Target(Selector):
 		self.index = index
 		self.name = "TARGET[%d]" %(self.index)
 
-	def eval(self, entities, source):
+	def select(self, entities, source):
 		return source.targets[self.index]
 
 	def __getitem__(self, index):

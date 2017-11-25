@@ -50,9 +50,7 @@ class BaseCard(Entity):
 			target_selectors = [logic.selector.ALLIED_UNITS] + target_selectors
 		targets = []
 		for selector in target_selectors:
-			targets.append(selector.eval(
-				entities=self.game.entities,
-				source=self.controller))
+			targets.append(selector.eval(self.controller))
 		return targets
 
 	def __hash__(self):
