@@ -636,13 +636,13 @@ class Keywords(pyunit.TestCase):
 		defender = game.player2.give("RageheartThug", Zone.PLAY) # 2/4
 
 		# Attack, defender should drop to 1 health
-		#attacker.attack(defender)
-		#self.expect_false(defender.dead)
-		#self.expect_eq(defender.health, 1)
+		attacker.attack(defender)
+		self.expect_false(defender.dead)
+		self.expect_eq(defender.health, 1)
 
 		# Attack again, defender should die
-		#attacker.attack(defender)
-		#self.expect_true(defender.dead)
+		attacker.attack(defender)
+		self.expect_true(defender.dead)
 
 
 	def test_conduit(self):

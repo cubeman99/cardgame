@@ -691,6 +691,14 @@ class Bounce(TargetedAction):
 			action_log.log("%r is bounced back to %s's hand", target, target.controller)
 			target.zone = Zone.HAND
 
+class Toxic(TargetedAction):
+	"""
+	Reduces \a targets to 1 health.
+	"""
+	def invoke(self, source, target):
+		if not target.dead:
+			action_log.log("Reducing %r to 1 health", target)
+			target.damage = target.max_health - 1
 
 
 
@@ -869,7 +877,7 @@ class IfThen(GameAction):
 
 	def invoke(self, source, condition, then_actions):
 		if condition:
-			source.game.queue_actions(source, listify(then_actions))
+			source.game.queue_actions(source, listify(then_actions), source.event_args)
 
 class IfThenElse(GameAction):
 	"""

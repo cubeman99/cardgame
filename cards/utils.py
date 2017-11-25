@@ -5,6 +5,9 @@ from logic.events import *
 from logic.conditions import *
 from logic.actions import *
 
+def SET(amount):
+	return lambda self, i: amount
+
 # Factory Buff class creation helper
 def buff(power=0, health=0, inspire=0, **kwargs):
 	buff_tags = {}
