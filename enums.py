@@ -35,6 +35,7 @@ class GameTag(IntEnum):
 	STEP_PLAYER		= 26
 	TOKEN			= 27
 	EXTRA_CORRUPTS	= 28
+	VERDICT			= 29
 
 
 	# Keywords

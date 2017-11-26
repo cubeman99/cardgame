@@ -72,14 +72,17 @@ class BaseCard(Entity):
 			setattr(ret, k, v)
 		return ret
 
-	def refresh_buff(self, source, id):
+	def refresh_buff(self, source, buff_id, **kwargs):
 		for buff in self.buffs:
-			if buff.source is source and buff.id == id:
+			if buff.source is source and buff.id == buff_id:
 				buff.tick = source.game.tick
+				# Refresh kwargs
+				for k, v in kwargs.items():
+					setattr(buff, k, v)
 				break
 		else:
-			logging.action_log.log("Aura from %r buffs %r with %r", source, self, id)
-			buff = source.buff(self, id)
+			logging.action_log.log("Aura from %r buffs %r with %r", source, self, buff_id)
+			buff = source.buff(self, buff_id, **kwargs)
 			buff.tick = source.game.tick
 			source.game.active_aura_buffs.append(buff)
 
@@ -169,7 +172,7 @@ class BaseCard(Entity):
 		return self
 
 	def destroy(self):
-		pass
+		return self.game.cheat_action(self, [actions.Destroy(self), actions.Deaths()])
 
 	def discard(self):
 		logging.action_log.log("%s discards %r", self.controller, self)
@@ -193,6 +196,8 @@ class LiveEntity(BaseCard):
 	#power = 0
 	max_health	= int_property("max_health")
 	damage		= int_property("damage")
+	verdict		= int_property("verdict")
+
 
 	def __init__(self, data):
 		super().__init__(data)
@@ -385,6 +390,7 @@ class Effect(BaseCard):
 	inspire	= int_property("inspire")
 	spy		= int_property("spy")
 	inform	= int_property("inform")
+	verdict	= int_property("verdict")
 
 	buffs = []
 	slots = []
@@ -406,7 +412,8 @@ class Effect(BaseCard):
 
 	def _getattr(self, attr, value):
 		value += getattr(self, "_" + attr, 0)
-		return getattr(self.data.scripts, attr, lambda s, x: x)(self, value)
+		return value
+		#return getattr(self.data.scripts, attr, lambda s, x: x)(self, value)
 		#return i;
 		#return getattr(self.data.scripts, attr, lambda s, x: x)(self, i)
 

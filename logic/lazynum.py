@@ -9,11 +9,7 @@ BinaryOp = Callable[[Any, Any], bool]
 UnaryOp = Callable[[Any], bool]
 
 def evaluate(value, source):
-	if isinstance(value, LazyValue):
-		return value.evaluate(source)
-	elif isinstance(value, Condition):
-		return value.evaluate(source)
-	elif isinstance(value, Selector):
+	if isinstance(value, LazyNum):
 		return value.eval(source)
 	else:
 		return value

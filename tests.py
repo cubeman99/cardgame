@@ -279,6 +279,44 @@ class CardTests(pyunit.TestCase):
 		game.end_turn(game.player1)
 		self.expect_true(berserker.dead)
 
+	def test_snarling_bailiff(self):
+		"""
+		Unit: Snarling Bailiff
+		Renew. This Unit has +2/+2 for each Verdict in play.
+		"""
+		game = Game()
+		bailiff = game.player1.give("SnarlingBailiff").play()
+
+		# 0 verdicts in play: 2/2 (no buff)
+		self.expect_eq(len(bailiff.buffs), 0)
+		self.expect_eq(bailiff.power, 2)
+		self.expect_eq(bailiff.health, 2)
+
+		# 1 verdict in play: 4/4
+		drake = game.player1.give("BoundDrake").play()
+		self.expect_eq(len(bailiff.buffs), 1)
+		self.expect_eq(bailiff.power, 4)
+		self.expect_eq(bailiff.health, 4)
+
+		# 3 verdicts in play: 8,8
+		drake.buff(drake, buff="Verdict_Buff")
+		drake2 = game.player2.give("BoundDrake").play()
+		self.expect_eq(len(bailiff.buffs), 1)
+		self.expect_eq(bailiff.power, 8)
+		self.expect_eq(bailiff.health, 8)
+
+		# 1 verdict in play: 4/4
+		drake.destroy()
+		self.expect_eq(len(bailiff.buffs), 1)
+		self.expect_eq(bailiff.power, 4)
+		self.expect_eq(bailiff.health, 4)
+
+		# 0 verdicts in play: 2/2 (no buff)
+		drake2.destroy()
+		self.expect_eq(len(bailiff.buffs), 0)
+		self.expect_eq(bailiff.power, 2)
+		self.expect_eq(bailiff.health, 2)
+
 
 
 class PlayTargets(pyunit.TestCase):
@@ -701,6 +739,12 @@ class Keywords(pyunit.TestCase):
 		Renew: Unit heals to full at the start of your turn
 		"""
 		game = Game()
+		# DraconicTitan: 6/9 Renew
+		card = game.player1.give("DraconicTitan", Zone.PLAY)
+		card.damage = 5
+		self.expect_eq(card.damage, 5)
+		# TODO: begin turn
+
 
 	def test_fury(self):
 		"""
@@ -712,6 +756,12 @@ class Keywords(pyunit.TestCase):
 		"""
 		Reinforce: If you already have a Unit in play of the same type as the
 		reinforce card, gain an effect.
+		"""
+		game = Game()
+
+	def test_verdict(self):
+		"""
+		Verdict:
 		"""
 		game = Game()
 

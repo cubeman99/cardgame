@@ -2,10 +2,11 @@ from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 from logging import action_log
 from enums import *
-from logic.events import *
+from exceptions import *
+from logic.events import EventListener
 from logic.lazynum import *
 from logic.selector import *
-from exceptions import *
+import logic.lazynum as lazynum
 from manager import Manager, CardManager
 from utils import listify
 
@@ -357,6 +358,13 @@ class Destroy(TargetedAction):
 		else:
 			action_log.log("%r destroys %r", source, target)
 			target.zone = Zone.DISCARD
+
+class Deaths(GameAction):
+	"""
+	Process all deaths in the PLAY Zone.
+	"""
+	def invoke(self, source):
+		source.game.process_deaths()
 
 class Death(GameAction):
 	ENTITY = ActionArg()
@@ -732,16 +740,20 @@ class Refresh:
 	"""
 	Refresh a buff or a set of tags on an entity
 	"""
-	def __init__(self, selector, tags=None, buff=None):
+	def __init__(self, selector, tags=None, buff=None, **kwargs):
 		self.selector = selector
 		self.tags = tags
 		self.buff = buff
+		self.kwargs = kwargs
 
 	def trigger(self, source):
 		entities = self.selector.select(source.game, source)
 		for entity in entities:
 			if self.buff:
-				entity.refresh_buff(source, self.buff)
+				buff_attributes = {}
+				for key, value in self.kwargs.items():
+					buff_attributes[key] = lazynum.evaluate(value, source)
+				entity.refresh_buff(source, self.buff, **buff_attributes)
 			else:
 				tags = {}
 				for tag, value in self.tags.items():

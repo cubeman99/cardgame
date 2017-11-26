@@ -154,6 +154,7 @@ class CardManager(Manager):
 		GameTag.CONTROLLER:		"controller",
 		GameTag.ZONE:			"zone",
 		GameTag.EXTRA_CORRUPTS:	"extra_corrupts",
+		GameTag.VERDICT:		"verdict",
 
 
 		GameTag.DECLARED_ATTACK:	"declared_attack",

@@ -2,6 +2,7 @@
 from enums import *
 from cards.card_data import CardData
 from cards.utils import *
+from logic.actions import *
 from logic.events import *
 from logic.conditions import *
 

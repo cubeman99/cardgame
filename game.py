@@ -243,6 +243,12 @@ class Game(Entity):
 		return self.action_block(source, actions,
 			type=BlockType.TRIGGER, event_args=event_args)
 
+	def cheat_action(self, source, actions):
+		"""
+		Perform actions as if a card had just triggered them
+		"""
+		return self.trigger(source, actions, event_args=None)
+
 	def find_entity(self, id):
 		entity = [e for e in self.game if e.entity_id == id]
 		if len(entity) > 0:

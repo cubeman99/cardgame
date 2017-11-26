@@ -185,6 +185,9 @@
 		"supply": 0,
 		"card_type": "unit"
 	},
+	"RedmawBerserker_Buff": {
+		"card_type": "effect"
+	},
 	"RipperPack": {
 		"name": "Ripper Pack",
 		"swarm": "RipperPack_Swarm",
@@ -598,6 +601,17 @@
 		"card_type": "effect",
 		"max_hand_size": 1
 	},
+	"BreweryServant": {
+		"name": "Brewery Servant",
+		"text": "Toxic",
+		"toxic": 1,
+		"tribe": "slug",
+		"power": 1,
+		"health": 2,
+		"morale": 0,
+		"supply": 0,
+		"card_type": "unit"
+	},
 	"IchorExile": {
 		"muddle": 1,
 		"name": "Ichor Exile",
@@ -650,5 +664,174 @@
 	},
 	"ThunderbloodPontiff_Buff": {
 		"card_type": "effect"
+	},
+	"AppointedSlayer": {
+		"name": "Appointed Slayer",
+		"text": "At the start of each turn, this Unit becomes an X/X for each Morale you have.",
+		"tribe": "drake",
+		"power": 0,
+		"health": 2,
+		"morale": 1,
+		"supply": 0,
+		"card_type": "unit"
+	},
+	"BoundDrake": {
+		"name": "Bound Drake",
+		"renew": 1,
+		"text": "Emerge: Place a -1/-1 Verdict on this Unit. Toxic, Renew",
+		"toxic": 1,
+		"tribe": "drake",
+		"power": 1,
+		"health": 3,
+		"morale": 0,
+		"supply": 0,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"CourtAdjudicator": {
+		"name": "Court Adjudicator",
+		"text": "Emerge: Place a -1/-1 Verdict on a Unit. ",
+		"tribe": "drake",
+		"power": 2,
+		"health": 4,
+		"morale": 0,
+		"supply": 1,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"CourtExile": {
+		"name": "Court Exile",
+		"text": "Emerge: Discard 1 from your deck",
+		"tribe": "drake",
+		"power": 3,
+		"health": 3,
+		"morale": 0,
+		"supply": 0,
+		"card_type": "unit"
+	},
+	"DraconicTitan": {
+		"name": "Draconic Titan",
+		"renew": 1,
+		"text": "Renew",
+		"tribe": "drake",
+		"power": 6,
+		"health": 9,
+		"morale": 3,
+		"supply": 1,
+		"card_type": "unit"
+	},
+	"DrakbloodAscetic": {
+		"name": "Drakblood Ascetic",
+		"text": "Toxic, Emerge: Give Renew to a Unit",
+		"toxic": 1,
+		"tribe": "drake",
+		"power": 1,
+		"health": 2,
+		"morale": 1,
+		"supply": 0,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"DrakbloodAscetic_Buff": {
+		"renew": 1,
+		"card_type": "invalid"
+	},
+	"Drakliege": {
+		"name": "Drakliege",
+		"text": "Emerge: Deal 2 damage to all Units with a Verdict",
+		"tribe": "drake",
+		"power": 6,
+		"health": 8,
+		"morale": 2,
+		"supply": 2,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"GavelhandPunisher": {
+		"name": "Gavelhand Punisher",
+		"renew": 1,
+		"text": "Renew, Emerge: Destroy a unit with a Verdict",
+		"tribe": "drake",
+		"power": 4,
+		"health": 7,
+		"morale": 1,
+		"supply": 3,
+		"emerge": 1,
+		"card_type": "unit"
+	},
+	"JusticarBasher": {
+		"name": "Justicar Basher",
+		"renew": 1,
+		"text": "Renew, This unit gains +3/+2 while in combat against a unit with a Verdict",
+		"tribe": "drake",
+		"power": 3,
+		"health": 4,
+		"morale": 1,
+		"supply": 2,
+		"card_type": "unit"
+	},
+	"JusticarBasher_Buff": {
+		"card_type": "effect",
+		"power": 3,
+		"health": 2
+	},
+	"OratorDrake": {
+		"inform": 1,
+		"name": "Orator Drake",
+		"text": "Emerge: Move a Verdict from one Unit to another. Inform",
+		"tribe": "drake",
+		"power": 2,
+		"health": 5,
+		"morale": 2,
+		"supply": 0,
+		"card_type": "unit"
+	},
+	"SnarlingBailiff": {
+		"name": "Snarling Bailiff",
+		"renew": 1,
+		"text": "Renew. This Unit has +2/+2 for each Verdict in play.",
+		"tribe": "drake",
+		"power": 2,
+		"health": 2,
+		"morale": 1,
+		"supply": 2,
+		"card_type": "unit"
+	},
+	"SnarlingBailiff_Buff": {
+		"card_type": "effect"
+	},
+	"TODO": {
+		"name": "",
+		"text": "",
+		"tribe": "drake",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0,
+		"card_type": "spell"
+	},
+	"Verdict_Buff": {
+		"health": -1,
+		"power": -1,
+		"verdict": 1,
+		"card_type": "effect"
+	},
+	"LastDitchEffort": {
+		"name": "Last Ditch Effort",
+		"text": "Summon 3 1/1 Peasents",
+		"tribe": "pheasant",
+		"morale": 2,
+		"supply": 0,
+		"card_type": "spell"
+	},
+	"LastDitchEffort_Token": {
+		"name": "Pheasant",
+		"text": "",
+		"tribe": "pheasant",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0,
+		"card_type": "unit"
 	}
 }
