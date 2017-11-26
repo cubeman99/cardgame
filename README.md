@@ -8,9 +8,11 @@ This project is a derivative work of [fireplace](https://github.com/jleclanche/f
 * Python 3.5+
 
 ### Running
-Currently this game is only implemented as a one-player, play-against-yourself.
-* On Windows, run the batch file **play_game.bat**
-* On Linux, enter the command ```python main.py```
+The game is implemented as a server client architecture.
+* On Windows, launch the batch file **run_server.bat** to run the server, and launch the batch file **run_client.bat** to run a text-based client
+* On Linux, enter the command ```python server.py``` or ```python client.py```
+
+You can run the test drivers with the command  ```python run_tests.py```
 
 ### License
 

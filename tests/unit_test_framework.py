@@ -1,10 +1,10 @@
-from colors import *
 import sys
 import os
 import traceback
 import time
 import inspect
-
+import argparse
+from cardgame.colors import *
 
 def plural(word, list):
 	if len(list) != 1:
@@ -12,11 +12,12 @@ def plural(word, list):
 	else:
 		return word
 
+current_test = None
 
 class Test:
-	def __init__(self, test_case, test_func):
-		self.name = test_func.__name__
+	def __init__(self, test_case, test_name, test_func):
 		self.test_case = test_case
+		self.name = test_name
 		self.test_func = test_func
 		self.pass_count = 0
 		self.fail_count = 0
@@ -41,6 +42,9 @@ class Test:
 
 	def run(self):
 		color_print("{test_pass}[ RUN      ]{} %s\n" %(self))
+
+		global current_test
+		current_test = self
 
 		self.pass_count = 0
 		self.fail_count = 0
@@ -73,20 +77,60 @@ class Test:
 		return self.passed
 
 
+def is_a_test_function(name):
+	return name.startswith("test_") and\
+			name not in ("test_setup", "test_cleanup")
+
+def expect(condition):
+	if not current_test.expect(condition):
+		color_print("  Actual: %r\n" %(condition))
+		color_print("Expected: %r\n" %(True))
+
+def expect_true(condition):
+	if not current_test.expect(condition):
+		color_print("  Actual: %r\n" %(condition))
+		color_print("Expected: %r\n" %(True))
+
+def expect_false(condition):
+	if not current_test.expect(not condition):
+		color_print("  Actual: %r\n" %(condition))
+		color_print("Expected: %r\n" %(False))
+
+def expect_eq(actual, expected):
+	if not current_test.expect(actual == expected):
+		color_print("  Actual: %r\n" %(actual))
+		color_print("Expected: %r\n" %(expected))
+
+def expect_ne(actual, expected):
+	if not current_test.expect(actual != expected):
+		color_print("  Actual: %r\n" %(actual))
+		color_print("Expected: %r\n" %(expected))
+
 class TestCase:
-	def __init__(self):
-		self.tests = [Test(self, getattr(self, t)) \
-			for t in dir(self) if t.startswith("test_")]
+	def __init__(self, module):
+		self.name = module.__name__
+		all_functions = inspect.getmembers(module, inspect.isfunction)
+		self.setup_func = getattr(module, "test_setup", None)
+		self.cleanup_func = getattr(module, "test_cleanup", None)
+
+		self.tests = []
+		for name, func in all_functions:
+			if is_a_test_function(name):
+				self.tests.append(Test(self, name, func))
 
 	def setup(self):
-		pass
+		"""
+		Perform test case setup code.
+		"""
+		if self.setup_func:
+			self.setup_func()
 
 	def cleanup(self):
-		pass
-
-	@property
-	def name(self):
-		return self.__class__.__name__
+		"""
+		Perform test case cleanup code.
+		"""
+		if self.cleanup_func:
+			self.cleanup_func()
 
 	def expect(self, condition):
 		if not self.test.expect(condition):
@@ -172,7 +216,68 @@ class TestCase:
 				color_print("{test_fail}[  FAILED  ]{} %s\n" %(
 					test))
 
-def run_all_tests(globals, test_list=None):
+def str_count(count, name):
+	if isinstance(count, list):
+		count = len(count)
+	if isinstance(count, tuple):
+		count = len(count)
+	if count == 1:
+		return "%d %s" %(count, name)
+	else:
+		return "%d %ss" %(count, name)
+
+def run_all_tests(test_modules):
+	if not isinstance(test_modules, list):
+		test_modules = [test_modules]
+	test_cases = [TestCase(module) for module in test_modules]
+
+	all_tests = []
+	for test_case in test_cases:
+		all_tests += test_case.tests
+
+	color_print("{test_pass}[==========]{} Running %s from %s.\n" %(
+		str_count(all_tests, "test"),
+		str_count(test_cases, "test case")))
+	color_print("{test_pass}[----------]{} Global test environment setup.\n")
+
+	passed_tests = []
+	failed_tests = []
+
+	for test_case in test_cases:
+
+		color_print("{test_pass}[----------]{} %s from %s\n" %(
+			str_count(test_case.tests, "test"),
+			test_case.name))
+		test_case.setup()
+
+		for test in test_case.tests:
+			passed = test.run()
+			if passed:
+				passed_tests.append(test)
+			else:
+				failed_tests.append(test)
+
+		test_case.cleanup()
+		color_print("{test_pass}[----------]{} %s from %s (%d ms)\n" %(
+			str_count(test_case.tests, "test"),
+			test_case.name, 0))
+
+	color_print("{test_pass}[----------]{} Global test environment cleanup.\n")
+	color_print("{test_pass}[==========]{} %s from %s ran.\n" %(
+		str_count(passed_tests + failed_tests, "test"),
+		str_count(test_cases, "test case")))
+
+	passed = (len(failed_tests) == 0)
+	color_print("{test_pass}[  PASSED  ]{} %s.\n" %(
+		str_count(passed_tests, "test")))
+	if not passed:
+		color_print("{test_fail}[  FAILED  ]{} %s, listed below:\n" %(
+			str_count(failed_tests, "test")))
+		for test in failed_tests:
+			color_print("{test_fail}[  FAILED  ]{} %s\n" %(
+				test))
+
+	return
 
 	global_dict = dict(globals)#globals())
 
@@ -245,5 +350,15 @@ def run_all_tests(globals, test_list=None):
 
 
 
+def unit_test_main(globals):
+	# Parse the command line arguments
+	parser = argparse.ArgumentParser(description="Run the cardgame client.")
+	parser.add_argument("host", metavar="HOST", type=str,
+		default=DEFAULT_HOST, nargs="?",
+		help="optional host IP address and optional port to connect to (in the format \"host:port\"). The default host is '%s' and the default port is %d." %(DEFAULT_HOST, DEFAULT_PORT))
+	parser.add_argument("-p", "--prompt", action="store_true",
+		help="prompt the user for the server's IP address")
+	args = parser.parse_args()
 
+	run_all_tests(globals)
 

@@ -1,0 +1,955 @@
+{
+	"Buff": {
+		"text": "",
+		"card_type": "invalid"
+	},
+	"Token_Tentacle": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Tentacle",
+		"tribe": "octopi",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"OctopiExile": {
+		"text": "Aftermath: Both players draw a card",
+		"card_type": "unit",
+		"name": "Octopi Exile",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 2,
+		"morale": 0,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"InfestedWhale": {
+		"text": "Aftermath: Summon 2 1/1 Tentacles",
+		"card_type": "unit",
+		"name": "Infested Whale",
+		"tribe": "octopi",
+		"power": 0,
+		"health": 3,
+		"morale": 1,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"EchoingFiend": {
+		"text": "Corrupt: Summon a copy of the destroyed Unit as a token",
+		"card_type": "unit",
+		"name": "Echoing Fiend",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 4,
+		"morale": 1,
+		"supply": 1,
+		"corrupt": 1
+	},
+	"ServantOfElagalth": {
+		"text": "Aftermath: Summon a 3/4",
+		"card_type": "unit",
+		"name": "Servant of Elagalth",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 2,
+		"morale": 2,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"ServantOfElagalth_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Servant of Elagalth Token",
+		"tribe": "octopi",
+		"power": 3,
+		"health": 4,
+		"morale": 0,
+		"supply": 0
+	},
+	"StarvingCephalopod_Buff": {
+		"text": "",
+		"card_type": "effect"
+	},
+	"StarvingCephalopod": {
+		"text": "Corrupt: Gain the destroyed unit's stats * 2",
+		"card_type": "unit",
+		"name": "Starving Cephalopod",
+		"tribe": "octopi",
+		"power": 0,
+		"health": 0,
+		"morale": 1,
+		"supply": 1,
+		"corrupt": 1
+	},
+	"AgileSquirmer": {
+		"text": "Emerge: deal 3 damage to an enemy unit, aftermath: summon a 1/3",
+		"card_type": "unit",
+		"name": "Agile Squirmer",
+		"tribe": "octopi",
+		"power": 4,
+		"health": 2,
+		"morale": 1,
+		"supply": 2,
+		"aftermath": 1,
+		"emerge": 1
+	},
+	"AgileSquirmer_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Agile Squirmer Token",
+		"tribe": "octopi",
+		"power": 1,
+		"health": 3,
+		"morale": 0,
+		"supply": 0
+	},
+	"ElegalthsDeputy": {
+		"text": "All corrupts, trigger twice while alive, Aftermath: summon a 1/1",
+		"card_type": "unit",
+		"name": "Elegalth's Deputy",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 5,
+		"morale": 4,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"ElegalthsDeputy_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Elegalth's Deputy Token",
+		"tribe": "octopi",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"NecrolightSoldier": {
+		"text": "Corrupt: Deal 2 damage to an enemy unit",
+		"card_type": "unit",
+		"name": "Necrolight Soldier",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 3,
+		"morale": 0,
+		"supply": 0,
+		"corrupt": 1
+	},
+	"NoxiousTentacle": {
+		"text": "Aftermath: If killed by a unit, deal 2 damage to it",
+		"card_type": "unit",
+		"name": "Noxious Tentacle",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 1,
+		"morale": 0,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"SunkenGoliath": {
+		"text": "Aftermath: destroy an enemy unit with less attack",
+		"card_type": "unit",
+		"name": "Sunken Goliath",
+		"tribe": "octopi",
+		"power": 4,
+		"health": 7,
+		"morale": 3,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"UnstableLurker": {
+		"text": "Aftermath: Deal 3 damage to all enemies",
+		"card_type": "unit",
+		"name": "Unstable Lurker",
+		"tribe": "octopi",
+		"power": 3,
+		"health": 1,
+		"morale": 2,
+		"supply": 1,
+		"aftermath": 1
+	},
+	"NecrolightFollower": {
+		"text": "Aftermath: return a dead unit to your hand.",
+		"card_type": "unit",
+		"name": "Necrolight Follower",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 3,
+		"morale": 0,
+		"supply": 1,
+		"aftermath": 1
+	},
+	"NecrolightPriestess": {
+		"text": "Emerge: Trigger all aftermaths that are currently in play.",
+		"card_type": "unit",
+		"name": "Necrolight Priestess",
+		"tribe": "octopi",
+		"power": 3,
+		"health": 5,
+		"morale": 4,
+		"supply": 0,
+		"emerge": 1
+	},
+	"ElegalthsChosen": {
+		"text": "Give a friendly unit: Aftermath: Summon a 3/3 hatchling",
+		"card_type": "spell",
+		"battle": 1,
+		"name": "Elegalth's Chosen",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 0
+	},
+	"ElegalthsChosen_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"name": "Elegalth's Chosen Buff",
+		"aftermath": 1
+	},
+	"ElegalthsChosen_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Hatchling",
+		"tribe": "octopi",
+		"power": 3,
+		"health": 3,
+		"morale": 0,
+		"supply": 0
+	},
+	"AbyssalSummoning": {
+		"text": "Corrupt: Summon a 5/5 Elgathian, else summon a 3/3 Failure",
+		"card_type": "spell",
+		"name": "Abyssal Summoning",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 0,
+		"corrupt": 1
+	},
+	"AbyssalSummoning_Token_Elgathian": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Elgathian",
+		"tribe": "octopi",
+		"power": 5,
+		"health": 5,
+		"morale": 0,
+		"supply": 0
+	},
+	"AbyssalSummoning_Token_Failure": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Failure",
+		"tribe": "octopi",
+		"power": 3,
+		"health": 3,
+		"morale": 0,
+		"supply": 0
+	},
+	"SacrificialIncantation": {
+		"text": "Corrupt: deal 5 damage to a unit, gain 1 morale. Every unit corrupted allows an additional cast.",
+		"card_type": "spell",
+		"name": "Sacrificial Incantation",
+		"tribe": "octopi",
+		"morale": 3,
+		"supply": 0,
+		"corrupt": 1
+	},
+	"ReturnFromTheAbyss": {
+		"text": "Select two graveyard cards, return them to your hand.",
+		"card_type": "spell",
+		"name": "Return from the Abyss",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 2
+	},
+	"PotentAfterlife": {
+		"text": "Corrupt: Draw 2 cards",
+		"card_type": "spell",
+		"name": "Potent Afterlife",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 0,
+		"corrupt": 1
+	},
+	"ExtremePressure": {
+		"text": "Deal 3 damage to a unit, if it lives summon a 2/1 Tentacle",
+		"card_type": "spell",
+		"name": "Extreme Pressure",
+		"tribe": "octopi",
+		"morale": 0,
+		"supply": 1
+	},
+	"ExtremePressure_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Tentacle",
+		"tribe": "octopi",
+		"power": 2,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"Buff_Test": {
+		"text": "",
+		"card_type": "effect",
+		"power": 4,
+		"health": 5
+	},
+	"Token_Test": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Test Token",
+		"tribe": "octopi",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"TestCard_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"max_hand_size": 1
+	},
+	"TestCard": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Test Card",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0,
+		"aftermath": 1
+	},
+	"PackExile": {
+		"text": "Fury",
+		"card_type": "unit",
+		"fury": 1,
+		"name": "Pack Exile",
+		"tribe": "aard",
+		"power": 2,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"RagepackGrowler": {
+		"text": "Swarm: +2/+1",
+		"card_type": "unit",
+		"name": "Ragepack Growler",
+		"swarm": 1,
+		"tribe": "aard",
+		"power": 1,
+		"health": 2,
+		"morale": 0,
+		"supply": 0
+	},
+	"RagepackGrowler_Swarm": {
+		"text": "",
+		"card_type": "effect",
+		"power": 2,
+		"health": 1
+	},
+	"RedmawBerserker": {
+		"text": "When this unit takes damage, destroy it at the end of the turn",
+		"card_type": "unit",
+		"name": "Redmaw Berserker",
+		"tribe": "aard",
+		"power": 4,
+		"health": 4,
+		"morale": 0,
+		"supply": 0
+	},
+	"RedmawBerserker_Buff": {
+		"text": "",
+		"card_type": "effect"
+	},
+	"BlackbloodBruiser": {
+		"text": "Toxic, Fury",
+		"card_type": "unit",
+		"fury": 1,
+		"name": "Blackblood Bruiser",
+		"toxic": 1,
+		"tribe": "aard",
+		"power": 0,
+		"health": 3,
+		"morale": 0,
+		"supply": 1
+	},
+	"BonehoarderBrute": {
+		"text": "When this unit kills a unit, it gains +1/+2",
+		"card_type": "unit",
+		"name": "Bonehoarder Brute",
+		"tribe": "aard",
+		"power": 4,
+		"health": 6,
+		"morale": 0,
+		"supply": 3
+	},
+	"BonehoarderBrute_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"power": 1,
+		"health": 2
+	},
+	"WarpackChieftan": {
+		"text": "When this Unit attacks, put a 1/1 Aard Whelp into play attacking the opponent.",
+		"card_type": "unit",
+		"name": "Warpack Chieftan",
+		"tribe": "aard",
+		"power": 2,
+		"health": 5,
+		"morale": 1,
+		"supply": 1
+	},
+	"WarpackChieftan_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Aard Whelp",
+		"tribe": "aard",
+		"power": 1,
+		"health": 3,
+		"morale": 0,
+		"supply": 0
+	},
+	"Buff_Fury": {
+		"text": "",
+		"card_type": "effect",
+		"power": 1,
+		"health": 1
+	},
+	"RageheartThug": {
+		"text": "Fury",
+		"card_type": "unit",
+		"fury": 1,
+		"name": "Rageheart Thug",
+		"tribe": "aard",
+		"power": 2,
+		"health": 4,
+		"morale": 1,
+		"supply": 1
+	},
+	"WarlordHeir": {
+		"text": "Heroic: +5/+4, Inspire (1)",
+		"card_type": "unit",
+		"heroic": 1,
+		"name": "Warlord Heir",
+		"tribe": "aard",
+		"power": 0,
+		"health": 1,
+		"morale": 1,
+		"supply": 1
+	},
+	"WarlordHeir_Heroic": {
+		"text": "",
+		"card_type": "effect",
+		"power": 5,
+		"health": 4,
+		"inspire": 1
+	},
+	"RipperPack": {
+		"text": "Swarm: +2/+2, Emerge: Put a copy of this Unit into play.",
+		"card_type": "unit",
+		"name": "Ripper Pack",
+		"swarm": 1,
+		"tribe": "aard",
+		"power": 3,
+		"health": 3,
+		"morale": 1,
+		"supply": 2,
+		"emerge": 1
+	},
+	"RipperPack_Swarm": {
+		"text": "",
+		"card_type": "effect",
+		"power": 2,
+		"health": 2
+	},
+	"RageheartScreamer": {
+		"text": "Aftermath: Give all allied Units Heroic: +2/+2",
+		"card_type": "unit",
+		"name": "Rageheart Screamer",
+		"tribe": "aard",
+		"power": 5,
+		"health": 3,
+		"morale": 2,
+		"supply": 1,
+		"aftermath": 1
+	},
+	"RageheartScreamer_Buff": {
+		"text": "",
+		"card_type": "invalid",
+		"heroic": 1
+	},
+	"RageheartScreamer_Buff_Heroic": {
+		"text": "",
+		"card_type": "effect",
+		"power": 2,
+		"health": 2
+	},
+	"WarpackHowler": {
+		"text": "Swarm: +4/+3, Emerge: Place two 1/1 Aard units into play",
+		"card_type": "unit",
+		"name": "Warpack Howler",
+		"swarm": 1,
+		"tribe": "aard",
+		"power": 2,
+		"health": 3,
+		"morale": 2,
+		"supply": 2,
+		"emerge": 1
+	},
+	"WarpackHowler_Swarm": {
+		"text": "",
+		"card_type": "effect",
+		"power": 4,
+		"health": 3
+	},
+	"WarpackHowler_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Warpack Howler Token",
+		"tribe": "aard",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"RageheartInitiation": {
+		"text": "A Unit gains Fury, or put a 1/1 Aard into play with Fury.",
+		"card_type": "spell",
+		"name": "Rageheart Initiation",
+		"tribe": "aard",
+		"morale": 0,
+		"supply": 1
+	},
+	"RageheartInitiation_Choice1": {
+		"text": "Give a unit Fury.",
+		"card_type": "spell",
+		"name": "Rageheart Initiation",
+		"tribe": "aard",
+		"morale": 0,
+		"supply": 1
+	},
+	"RageheartInitiation_Choice1_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"fury": 1
+	},
+	"RageheartInitiation_Choice2": {
+		"text": "Put a 1/1 Aard into play with Fury.",
+		"card_type": "spell",
+		"name": "Rageheart Initiation",
+		"tribe": "aard",
+		"morale": 0,
+		"supply": 1
+	},
+	"RageheartInitiation_Token": {
+		"text": "",
+		"card_type": "unit",
+		"fury": 1,
+		"name": "Aard",
+		"tribe": "aard",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"RaidpackRally": {
+		"text": "Put two 1/1 Aardwolf into play with Swarm +1/+0",
+		"card_type": "spell",
+		"battle": 1,
+		"name": "Raidpack Rally",
+		"tribe": "aard",
+		"morale": 1,
+		"supply": 1
+	},
+	"RaidpackRally_Token": {
+		"text": "Swarm: +1/+0",
+		"card_type": "unit",
+		"name": "Warpack Howler",
+		"swarm": 1,
+		"tribe": "aard",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"RaidpackRally_Token_Swarm": {
+		"text": "",
+		"card_type": "effect",
+		"power": 4,
+		"health": 3
+	},
+	"Overrun": {
+		"text": "Allied Units gain +2/+1",
+		"card_type": "spell",
+		"name": "Overrun",
+		"tribe": "aard",
+		"morale": 1,
+		"supply": 1
+	},
+	"Overrun_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"power": 2,
+		"health": 1
+	},
+	"PlayerCard": {
+		"text": "Fury",
+		"card_type": "player",
+		"max_hand_size": 6,
+		"morale": 0,
+		"name": "Player",
+		"supply": 0,
+		"tribe": "aard",
+		"power": 0,
+		"health": 100
+	},
+	"TomePrinter": {
+		"text": "Your max hand size is increased by one while this Unit is in play.",
+		"card_type": "unit",
+		"name": "Tome Printer",
+		"tribe": "mole",
+		"power": 0,
+		"health": 2,
+		"morale": 0,
+		"supply": 1
+	},
+	"TomePrinter_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"max_hand_size": 1
+	},
+	"ScholarExile": {
+		"text": "Wisdom: +0/+2 and Inform",
+		"card_type": "unit",
+		"name": "Scholar Exile",
+		"tribe": "mole",
+		"wisdom": 1,
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	},
+	"ScholarExile_Wisdom": {
+		"text": "",
+		"card_type": "effect",
+		"health": 2,
+		"inform": 1
+	},
+	"IchorExile": {
+		"text": "Muddle.",
+		"card_type": "unit",
+		"muddle": 1,
+		"name": "Ichor Exile",
+		"tribe": "slug",
+		"power": 1,
+		"health": 2,
+		"morale": 0,
+		"supply": 0
+	},
+	"BreweryServant": {
+		"text": "Toxic",
+		"card_type": "unit",
+		"name": "Brewery Servant",
+		"toxic": 1,
+		"tribe": "slug",
+		"power": 1,
+		"health": 2,
+		"morale": 0,
+		"supply": 0
+	},
+	"StaticSnap": {
+		"text": "Conduit: Deal 2 damage to a Unit X+1 times.",
+		"card_type": "spell",
+		"name": "Static Snap",
+		"tribe": "eel",
+		"morale": 1,
+		"supply": 2
+	},
+	"ThunderbloodPontiff": {
+		"text": "Conduit: +2X/+2X",
+		"card_type": "unit",
+		"name": "Thunderblood Pontiff",
+		"tribe": "eel",
+		"power": 1,
+		"health": 1,
+		"morale": 3,
+		"supply": 1,
+		"emerge": 1
+	},
+	"ThunderbloodPontiff_Buff": {
+		"text": "",
+		"card_type": "effect"
+	},
+	"CovenBruiser": {
+		"text": "Swarm +1/+1, Conduit: +X/+X",
+		"card_type": "unit",
+		"name": "Coven Bruiser",
+		"swarm": 1,
+		"tribe": "eel",
+		"power": 1,
+		"health": 1,
+		"morale": 1,
+		"supply": 1,
+		"emerge": 1
+	},
+	"CovenBruiser_Swarm": {
+		"text": "",
+		"card_type": "effect",
+		"power": 1,
+		"health": 1
+	},
+	"CovenBruiser_Buff": {
+		"text": "",
+		"card_type": "effect"
+	},
+	"VoltitheClergy": {
+		"text": "Emerge: Discard 1. Inform. Aftermath: Draw a card",
+		"card_type": "unit",
+		"inform": 1,
+		"name": "Voltithe Clergy",
+		"tribe": "eel",
+		"power": 3,
+		"health": 4,
+		"morale": 0,
+		"supply": 1,
+		"aftermath": 1,
+		"emerge": 1
+	},
+	"Verdict_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"health": -1,
+		"power": -1,
+		"verdict": 1
+	},
+	"AppointedSlayer": {
+		"text": "At the start of each turn, this Unit becomes an X/X for each Morale you have.",
+		"card_type": "unit",
+		"name": "Appointed Slayer",
+		"tribe": "drake",
+		"power": 0,
+		"health": 2,
+		"morale": 1,
+		"supply": 0
+	},
+	"BoundDrake": {
+		"text": "Emerge: Place a -1/-1 Verdict on this Unit. Toxic, Renew",
+		"card_type": "unit",
+		"name": "Bound Drake",
+		"renew": 1,
+		"toxic": 1,
+		"tribe": "drake",
+		"power": 1,
+		"health": 3,
+		"morale": 0,
+		"supply": 0,
+		"emerge": 1
+	},
+	"CourtAdjudicator": {
+		"text": "Emerge: Place a -1/-1 Verdict on a Unit.",
+		"card_type": "unit",
+		"name": "Court Adjudicator",
+		"tribe": "drake",
+		"power": 2,
+		"health": 4,
+		"morale": 0,
+		"supply": 1,
+		"emerge": 1
+	},
+	"CourtExile": {
+		"text": "Emerge: Discard 1 from your deck",
+		"card_type": "unit",
+		"name": "Court Exile",
+		"tribe": "drake",
+		"power": 3,
+		"health": 3,
+		"morale": 0,
+		"supply": 0,
+		"emerge": 1
+	},
+	"DraconicTitan": {
+		"text": "Renew",
+		"card_type": "unit",
+		"name": "Draconic Titan",
+		"renew": 1,
+		"tribe": "drake",
+		"power": 6,
+		"health": 9,
+		"morale": 3,
+		"supply": 1
+	},
+	"DrakbloodAscetic": {
+		"text": "Toxic, Emerge: Give Renew to a Unit",
+		"card_type": "unit",
+		"name": "Drakblood Ascetic",
+		"toxic": 1,
+		"tribe": "drake",
+		"power": 1,
+		"health": 2,
+		"morale": 1,
+		"supply": 0,
+		"emerge": 1
+	},
+	"DrakbloodAscetic_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"renew": 1
+	},
+	"Drakliege": {
+		"text": "Emerge: Deal 2 damage to all Units with a Verdict",
+		"card_type": "unit",
+		"name": "Drakliege",
+		"tribe": "drake",
+		"power": 6,
+		"health": 8,
+		"morale": 2,
+		"supply": 2,
+		"emerge": 1
+	},
+	"GavelhandPunisher": {
+		"text": "Renew, Emerge: Destroy a unit with a Verdict",
+		"card_type": "unit",
+		"name": "Gavelhand Punisher",
+		"renew": 1,
+		"tribe": "drake",
+		"power": 4,
+		"health": 7,
+		"morale": 1,
+		"supply": 3,
+		"emerge": 1
+	},
+	"JusticarBasher": {
+		"text": "Renew, This unit gains +3/+2 while in combat against a unit with a Verdict",
+		"card_type": "unit",
+		"name": "Justicar Basher",
+		"renew": 1,
+		"tribe": "drake",
+		"power": 3,
+		"health": 4,
+		"morale": 1,
+		"supply": 2
+	},
+	"JusticarBasher_Buff": {
+		"text": "",
+		"card_type": "effect",
+		"power": 3,
+		"health": 2
+	},
+	"OratorDrake": {
+		"text": "Emerge: Move a Verdict from one Unit to another. Inform",
+		"card_type": "unit",
+		"inform": 1,
+		"name": "Orator Drake",
+		"tribe": "drake",
+		"power": 2,
+		"health": 5,
+		"morale": 2,
+		"supply": 0
+	},
+	"SnarlingBailiff": {
+		"text": "Renew. This Unit has +2/+2 for each Verdict in play.",
+		"card_type": "unit",
+		"name": "Snarling Bailiff",
+		"renew": 1,
+		"tribe": "drake",
+		"power": 2,
+		"health": 2,
+		"morale": 1,
+		"supply": 2
+	},
+	"SnarlingBailiff_Buff": {
+		"text": "",
+		"card_type": "effect"
+	},
+	"AcquittedOfCharge": {
+		"text": "Allied Unit is removed from play, and retuned to play.",
+		"card_type": "spell",
+		"name": "Acquitted of Charge",
+		"tribe": "drake",
+		"morale": 0,
+		"supply": 1
+	},
+	"CourtCorruption": {
+		"text": "Discard 3 cards from your deck, remove any number of Verdicts",
+		"card_type": "spell",
+		"name": "Court Corruption",
+		"tribe": "drake",
+		"morale": 1,
+		"supply": 0
+	},
+	"CourtProceedings": {
+		"text": "Place a -1/-1/ Verdict on all Units",
+		"card_type": "spell",
+		"name": "Court Proceedings",
+		"tribe": "drake",
+		"morale": 0,
+		"supply": 2
+	},
+	"CourtRecess": {
+		"text": "Remove all Verdicts, deal 1 damage to all Units for each removed Verdict",
+		"card_type": "spell",
+		"name": "Court Recess",
+		"tribe": "drake",
+		"morale": 2,
+		"supply": 1
+	},
+	"DraconicSubmission": {
+		"text": "Target Unit can't Flip",
+		"card_type": "spell",
+		"name": "Draconic Submission",
+		"tribe": "drake",
+		"morale": 1,
+		"supply": 0
+	},
+	"DrakbloodInitiation": {
+		"text": "Give Renew and Toxic to a Unit, or place a 2/2 Unit with a -1/-1 Verdict and Toxic.",
+		"card_type": "spell",
+		"name": "Drakblood Initiation",
+		"tribe": "drake",
+		"morale": 1,
+		"supply": 1
+	},
+	"Hammerfall": {
+		"text": "Place a -1/-1/ Verdict on up to two Units.",
+		"card_type": "spell",
+		"name": "Hammerfall",
+		"tribe": "drake",
+		"morale": 0,
+		"supply": 1
+	},
+	"OwnershipOfTheCourt": {
+		"text": "Take control of a Unit with a Verdict",
+		"card_type": "spell",
+		"name": "Ownership of the Court",
+		"tribe": "drake",
+		"morale": 2,
+		"supply": 1
+	},
+	"PublicExecution": {
+		"text": "Destroy an allied Unit, Gain 1 Moral, and take a draw step if the Unit had a Verdict",
+		"card_type": "spell",
+		"name": "Public Execution",
+		"tribe": "drake",
+		"morale": 0,
+		"supply": 0
+	},
+	"LastDitchEffort": {
+		"text": "Summon 3 1/1 Peasents",
+		"card_type": "spell",
+		"name": "Last Ditch Effort",
+		"tribe": "pheasant",
+		"morale": 2,
+		"supply": 0
+	},
+	"LastDitchEffort_Token": {
+		"text": "",
+		"card_type": "unit",
+		"name": "Pheasant",
+		"tribe": "pheasant",
+		"power": 1,
+		"health": 1,
+		"morale": 0,
+		"supply": 0
+	}
+}
