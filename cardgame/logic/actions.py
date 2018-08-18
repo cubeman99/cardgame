@@ -16,7 +16,7 @@ def _eval_card(source, card):
 	The card argument can be:
 	- A Card instance (nothing is done)
 	- The string ID of the card (the card is created)
-	- A LazyValue (the card is dynamically created)
+	- A LazyNum (the card is dynamically created)
 	"""
 	if isinstance(card, LazyNum):
 		card = card.eval(source)

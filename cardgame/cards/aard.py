@@ -122,7 +122,8 @@ class RageheartScreamer:
 	aftermath	= Buff(ALLIED_UNITS, "RageheartScreamer_Buff")
 
 class RageheartScreamer_Buff:
-	heroic = "RageheartScreamer_Buff_Heroic"
+	type	= CardType.EFFECT
+	heroic	= "RageheartScreamer_Buff_Heroic"
 
 RageheartScreamer_Buff_Heroic = buff(+2,+2)
 

@@ -5,26 +5,22 @@ from ..entity import *
 from typing import Any, Union, List, Callable, Iterable, Optional, Set
 
 
-BinaryOp = Callable[[Any, Any], bool]
-UnaryOp = Callable[[Any], bool]
 
 def evaluate(value, source):
+	"""
+	If the value is a lazy value, then evaluate it with source,
+	otherwise just return the value
+	"""
 	if isinstance(value, LazyNum):
 		return value.eval(source)
 	else:
 		return value
 
 
+BinaryOp = Callable[[Any, Any], bool]
+UnaryOp = Callable[[Any], bool]
 
-class LazyValue(metaclass=ABCMeta):
-	@abstractmethod
-	def evaluate(self, source):
-		pass
-
-	def eval(self, game, source):
-		return self.evaluate(source)
-
-
+# Helper functions for boolean operators
 def _and(left, right):
 	return left and right
 def _or(left, right):
@@ -32,13 +28,20 @@ def _or(left, right):
 def _not(value):
 	return not value
 
-# Something that evaluates at runtime.
-class LazyNum(LazyValue):
+
+class LazyNum:
+	"""
+	Lazily evaluate something at runtime.
+	"""
 	def __init__(self, *args):
 		self._args = args
 
+	def evaluate(self, source) -> int:
+		raise NotImplementedError
+
 	def eval(self, source):
 		from .selector import Selector
+		# First, evaluate the arguments
 		args = []
 		for value in self._args:
 			if isinstance(value, Selector):
@@ -47,6 +50,8 @@ class LazyNum(LazyValue):
 				args.append(value.eval(source))
 			else:
 				args.append(value)
+		# Now call the abstract evaluate this LazyNum, passing in the
+		# evaluated arguments
 		return self.evaluate(source, *args)
 
 	def __repr__(self):
@@ -58,28 +63,6 @@ class LazyNum(LazyValue):
 		text += ")"
 		return text
 
-	# TODO: remove this
-	def then(self, _):
-		pass
-
-	def evaluate(self, source) -> int:
-		raise NotImplementedError
-
-	def _cmp(op):
-		def func(self, other):
-			if isinstance(other, (int, LazyNum)):
-				# When comparing a LazyNum with an int, turn it into an
-				# Evaluator that compares the int to the result of the LazyNum
-				return LazyNumEvaluator(self, other, op)
-			return getattr(super(), "__%s__" % (op))(other)
-		return func
-
-	#__eq__ = _cmp(operator.eq)
-	#__ge__ = _cmp(operator.ge)
-	#__gt__ = _cmp(operator.gt)
-	#__le__ = _cmp(operator.le)
-	#__lt__ = _cmp(operator.lt)
-
 	# Unary arithmetic operators
 	def __neg__(self):
 		# TODO: should do unary operator properly
@@ -90,55 +73,55 @@ class LazyNum(LazyValue):
 		# TODO: should do unary operator properly
 		return LazyUnaryOperation(_not, self)
 
-
 	# Binary arithmetic operators
 	def __add__(self, other):
-		return LazyNumOperation(operator.add, self, other)
+		return LazyBinaryOperation(operator.add, self, other)
 	def __sub__(self, other):
-		return LazyNumOperation(operator.sub, self, other)
+		return LazyBinaryOperation(operator.sub, self, other)
 	def __mul__(self, other):
-		return LazyNumOperation(operator.mul, self, other)
+		return LazyBinaryOperation(operator.mul, self, other)
 	def __radd__(self, other):
-		return LazyNumOperation(operator.add, other, self)
+		return LazyBinaryOperation(operator.add, other, self)
 	def __rsub__(self, other):
-		return LazyNumOperation(operator.sub, other, self)
+		return LazyBinaryOperation(operator.sub, other, self)
 	def __rmul__(self, other):
-		return LazyNumOperation(operator.mul, other, self)
+		return LazyBinaryOperation(operator.mul, other, self)
 
 	# Binary comparison operators
 	def __eq__(self, other):
-		return LazyNumOperation(operator.eq, self, other)
+		return LazyBinaryOperation(operator.eq, self, other)
 	def __ne__(self, other):
-		return LazyNumOperation(operator.ne, self, other)
+		return LazyBinaryOperation(operator.ne, self, other)
 	def __ge__(self, other):
-		return LazyNumOperation(operator.ge, self, other)
+		return LazyBinaryOperation(operator.ge, self, other)
 	def __gt__(self, other):
-		return LazyNumOperation(operator.gt, self, other)
+		return LazyBinaryOperation(operator.gt, self, other)
 	def __le__(self, other):
-		return LazyNumOperation(operator.le, self, other)
+		return LazyBinaryOperation(operator.le, self, other)
 	def __lt__(self, other):
-		return LazyNumOperation(operator.lt, self, other)
+		return LazyBinaryOperation(operator.lt, self, other)
 
 	# Binary boolean operators
 	def __and__(self, other):
-		return LazyNumOperation(_and, self, other)
+		return LazyBinaryOperation(_and, self, other)
 	def __or__(self, other):
-		return LazyNumOperation(_or, self, other)
+		return LazyBinaryOperation(_or, self, other)
 	def __rand__(self, other):
-		return LazyNumOperation(_and, other, self)
+		return LazyBinaryOperation(_and, other, self)
 	def __ror__(self, other):
-		return LazyNumOperation(_or, other, self)
+		return LazyBinaryOperation(_or, other, self)
 
 	def get_entities(self, source):
 		from .selector import Selector
 		if isinstance(self.selector, Selector):
 			entities = self.selector.select(source.game, source)
-		elif isinstance(self.selector, LazyValue):
+		elif isinstance(self.selector, LazyNum):
 			entities = [self.selector.evaluate(source)]
 		else:
 			# TODO assert that self.selector is a TargetedAction
 			entities = sum(self.selector.trigger(source), [])
 		return entities
+
 
 operator_symbols = {
 	"add": "+",
@@ -166,6 +149,10 @@ operator_inversions = {
 }
 
 class LazyUnaryOperation(LazyNum):
+	"""
+	Lazily perform a unary operation.
+	Example: -x
+	"""
 	def __init__(self, op: UnaryOp, value):
 		super().__init__(value)
 		self.op = op
@@ -179,7 +166,11 @@ class LazyUnaryOperation(LazyNum):
 			"UNKNOWN_OP(%s)" %(self.op.__name__))
 		return "%s%r" %(symbol, self.value)
 
-class LazyNumOperation(LazyNum):
+class LazyBinaryOperation(LazyNum):
+	"""
+	Lazily perform a binary operation.
+	Example: a + b
+	"""
 	def __init__(self, op: BinaryOp, left, right):
 		super().__init__(left, right)
 		self.op = op
@@ -221,7 +212,8 @@ class Count(LazyNum):
 class OpAttr(LazyNum):
 	"""
 	Lazily evaluate Op over all tags in a selector.
-	This is analogous to lazynum.Attr, which is equivalent to OpAttr(..., ..., sum)
+	This is analogous to lazynum.Attr, which is equivalent to
+	OpAttr(..., ..., sum)
 	"""
 	def __init__(self, selector, tag, op):
 		super().__init__()
@@ -243,7 +235,6 @@ class OpAttr(LazyNum):
 			return ret
 		else:
 			return None
-
 
 
 class Attr(OpAttr):

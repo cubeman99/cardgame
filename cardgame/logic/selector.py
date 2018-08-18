@@ -8,7 +8,7 @@ from typing import Any, Union, List, Callable, Iterable, Optional, Set
 import inspect
 
 # Type aliases
-SelectorLike = Union["Selector", LazyValue]
+SelectorLike = Union["Selector", LazyNum]
 BinaryOp = Callable[[Any, Any], bool]
 
 
@@ -35,7 +35,7 @@ class Selector(LazyNum):
 	are closed under addition, subtraction, complementation, and ORing.
 
 	Note that addition means set intersection and OR means set union. For
-	convenience, LazyValues can also treated as selectors.
+	convenience, LazyNums can also treated as selectors.
 
 	Set operations preserve ordering (necessary for cards like Echo of
 	Medivh, where ordering matters)
@@ -66,8 +66,6 @@ class Selector(LazyNum):
 		return SetOpSelector(operator.sub, self, other)
 
 	def __rsub__(self, other: SelectorLike) -> "Selector":
-		if isinstance(other, LazyValue):
-			other = LazyValueSelector(other)
 		return other - self
 
 	def __radd__(self, other: SelectorLike) -> "Selector":
@@ -93,7 +91,7 @@ class EnumSelector(Selector):
 
 class SelectorEntityValue(metaclass=ABCMeta):
 	"""
-	SelectorEntityValues can be compared to arbitrary objects LazyValues;
+	SelectorEntityValues can be compared to arbitrary objects LazyNums;
 	the comparison's boolean result forms a selector on entities.
 	"""
 	@abstractmethod
@@ -130,7 +128,7 @@ class ComparisonSelector(Selector):
 
 	def select(self, entities, source):
 		right_value = (self.right.evaluate(source)
-		   if isinstance(self.right, LazyValue) else self.right)
+		   if isinstance(self.right, LazyNum) else self.right)
 		return [e for e in entities if
 				self.op(self.left.value(e, source), right_value)]
 
@@ -153,8 +151,6 @@ class ComparisonSelector(Selector):
 
 class SetOpSelector(Selector):
 	def __init__(self, op: Callable, left: Selector, right: SelectorLike):
-		#if isinstance(right, LazyValue):
-		#	right = LazyValueSelector(right)
 		self.op = op
 		self.left = left
 		self.right = right
@@ -211,7 +207,7 @@ class AttrValue(SelectorEntityValue):
 		return Attr(selector, self.tag)
 
 
-class Controller(LazyValue):
+class Controller(LazyNum):
 	def __init__(self):
 		self.name = "Controller"
 
